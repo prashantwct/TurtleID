@@ -114,6 +114,23 @@ def status_chip(species) -> None:
     )
 
 
+CHART_SEQ = 0
+
+
+def chart_key(species) -> str:
+    """A distinct key per rendered chart.
+
+    Streamlit derives an element ID from the element type and its arguments, so
+    two maps drawn from the same species collide — and a species can appear on
+    more than one tab in a single run. The counter is a module global, which
+    Streamlit re-initialises on every rerun, so the keys stay stable within a
+    run without accumulating across them.
+    """
+    global CHART_SEQ
+    CHART_SEQ += 1
+    return f"map-{species.id}-{CHART_SEQ}"
+
+
 def distribution_map(species) -> None:
     """Offline state-level presence map. No network call, no basemap tiles."""
     try:
@@ -153,7 +170,7 @@ def distribution_map(species) -> None:
         height=340, margin=dict(l=0, r=0, t=4, b=0),
         legend=dict(orientation="h", y=-0.05),
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, key=chart_key(species))
     st.caption(
         "State-level presence from the published sources cited below. Indicative "
         "only — not a modelled range polygon, and not survey effort corrected. "
@@ -161,7 +178,17 @@ def distribution_map(species) -> None:
     )
 
 
-def species_card(species, *, expanded_default: bool = True) -> None:
+def card_section(label: str, *, nested: bool, expanded: bool = False):
+    """A collapsible section, or a plain one when the card is already inside an
+    expander. Streamlit refuses to nest expanders, and both the key results and
+    the species reference render a card inside one."""
+    if nested:
+        st.markdown(f"**{label}**")
+        return st.container()
+    return st.expander(label, expanded=expanded)
+
+
+def species_card(species, *, expanded_default: bool = True, nested: bool = False) -> None:
     st.markdown(f"### *{species.scientific_name}* {species.authority}")
     st.markdown(
         f"**{species.common_en}**"
@@ -194,7 +221,11 @@ def species_card(species, *, expanded_default: bool = True) -> None:
         distribution_map(species)
 
     if species.confusion_with:
-        with st.expander("Species this is confused with", expanded=expanded_default):
+        with card_section(
+            "Species this is confused with",
+            nested=nested,
+            expanded=expanded_default,
+        ):
             for pair in species.confusion_with:
                 try:
                     other = DB.get(pair["species_id"])
@@ -206,9 +237,10 @@ def species_card(species, *, expanded_default: bool = True) -> None:
     cached = IUCN.cached(species.scientific_name)
     if cached:
         verdict = compare_with_local(species.iucn_status, cached)
-        with st.expander(
+        with card_section(
             f"IUCN Red List assessment "
             f"({'agrees' if verdict['status'] == 'match' else 'DIVERGES'})",
+            nested=nested,
             expanded=(verdict["status"] == "divergent"),
         ):
             if verdict["status"] == "divergent":
@@ -237,7 +269,7 @@ def species_card(species, *, expanded_default: bool = True) -> None:
             if cached.get("citation"):
                 st.caption(cached["citation"])
 
-    with st.expander("Sources"):
+    with card_section("Sources", nested=nested):
         for ref in species.references:
             if ref.get("url"):
                 st.markdown(f"- {ref['citation']} — [link]({ref['url']})")
@@ -482,7 +514,7 @@ def tab_key() -> None:
             f"{sp.iucn_status} · {sp.wpa}",
             expanded=(len(surviving) == 1),
         ):
-            species_card(sp, expanded_default=False)
+            species_card(sp, nested=True)
 
     if len(surviving) == 1:
         sp = DB.get(surviving[0].species_id)
@@ -538,7 +570,7 @@ def tab_reference() -> None:
         with st.expander(
             f"*{sp.scientific_name}* — {sp.common_en}  ·  {sp.iucn_status} · {sp.wpa}"
         ):
-            species_card(sp, expanded_default=False)
+            species_card(sp, nested=True)
 
     legal_footer()
 
