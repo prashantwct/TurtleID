@@ -252,6 +252,31 @@ def test_ingested_names_round_trip_through_the_splitter():
     assert capture_id(Path("chambal-2026-08-19--12.jpg")) == "chambal-2026-08-19"
 
 
+def test_contributions_from_one_person_on_one_day_are_one_capture():
+    """Grouping too hard costs flexibility; grouping too little leaks an animal."""
+    from training.promote_contributions import capture_for
+    first = {"contributor": "R. Officer, Churna", "submitted_utc": "2026-08-22T04:10:00+00:00"}
+    second = {"contributor": "R. Officer, Churna", "submitted_utc": "2026-08-22T06:55:00+00:00"}
+    other_day = {"contributor": "R. Officer, Churna", "submitted_utc": "2026-08-23T04:10:00+00:00"}
+    assert capture_for(first, None) == capture_for(second, None)
+    assert capture_for(first, None) != capture_for(other_day, None)
+    assert capture_for(first, "second-animal") != capture_for(first, None)
+
+
+def test_promoted_capture_ids_survive_the_splitter():
+    """A capture id that the splitter re-reads differently would leak silently."""
+    from pathlib import Path
+
+    from training.prepare_dataset import capture_id
+    from training.promote_contributions import capture_for
+    capture = capture_for(
+        {"contributor": "R. Officer, Churna", "submitted_utc": "2026-08-22T04:10:00+00:00"},
+        None,
+    )
+    assert "--" not in capture
+    assert capture_id(Path(f"{capture}--01.jpg")) == capture
+
+
 def test_a_single_capture_class_gets_no_validation_split():
     """Better an admitted blind spot than a validation number that means nothing."""
     import random

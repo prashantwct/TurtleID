@@ -232,6 +232,42 @@ arrangement ever needs unwinding, `reference_images/` can go back into
 `.gitignore` and nothing else breaks — the app already treats an absent file as
 normal. See PUBLISHING.md.
 
+### Promoting contributed photographs
+
+Images submitted through the Contribute tab land in `contributions/`. That is
+where they stop — being contributed does not put an image in front of the
+model. This carries them across:
+
+```bash
+python -m training.promote_contributions --list
+python -m training.promote_contributions --accept 4f2a9c1e
+python -m training.promote_contributions --accept-all-confident
+```
+
+Two kinds of contribution are held back rather than promoted: those submitted
+as anything other than `confident`, and those with no species id. Both need a
+determination first. A photograph filed under the wrong species does not
+announce itself — it becomes a class the model learns wrongly, surfacing later
+as a confident misidentification with nothing pointing back at the cause.
+
+Capture ids are derived from contributor and submission date, which errs toward
+grouping: two animals merged into one capture costs a little split flexibility,
+whereas one animal split across two captures puts the same individual in train
+and val. Use `--capture-suffix` when one contributor really did send two
+animals on one day.
+
+`contributions/promoted.json` records what has already moved, so re-running
+promotes only what is new. The contribution log itself is append-only and is
+never rewritten.
+
+**Where contributions live matters.** `contributions/` is written to the disk
+of whatever machine is running the app. On Streamlit Community Cloud that disk
+is ephemeral: every reboot and every push to `main` re-clones the repository,
+and anything submitted since the last one is gone. The deployed app is
+therefore not a collection point unless something moves images off it. On a
+field laptop the directory persists and this workflow is the whole path from
+Contribute tab to model.
+
 ### Filing field photographs as they arrive
 
 ```bash
