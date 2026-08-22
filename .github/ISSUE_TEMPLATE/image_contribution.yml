@@ -1,0 +1,51 @@
+name: Photograph contribution
+description: Offer images for the training set
+labels: ["images", "training-data"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Do not attach photographs to this issue
+
+        Images uploaded to GitHub retain their metadata. Describe what you have
+        and the maintainer will arrange a private transfer.
+
+        Better still: use the Contribute tab in the app, which strips EXIF
+        before anything is written to disk.
+  - type: textarea
+    id: what
+    attributes:
+      label: What do you have?
+      placeholder: |
+        e.g. ~40 photographs of Lissemys punctata and Pangshura tentoria from
+        rescue calls, dorsal and ventral, mixed light. Roughly 15 juveniles.
+    validations: { required: true }
+  - type: dropdown
+    id: views
+    attributes:
+      label: Which views?
+      multiple: true
+      options: [dorsal, ventral (plastron), lateral profile, head close-up, whole-animal in situ]
+  - type: dropdown
+    id: certainty
+    attributes:
+      label: How were they identified?
+      options:
+        - Verified by a specialist or vouchered institutional record
+        - Identified by me, confident
+        - Identified by me, uncertain
+        - Not identified
+    validations: { required: true }
+  - type: input
+    id: state
+    attributes:
+      label: State (no finer)
+  - type: checkboxes
+    id: rights
+    attributes:
+      label: Rights
+      options:
+        - label: I took these or have the right to contribute them, and they may be used to train this model and redistributed as part of the training set.
+          required: true
+        - label: I understand locality metadata will be stripped.
+          required: true

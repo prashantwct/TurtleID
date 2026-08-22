@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Bulk image contribution
+    url: https://github.com/
+    about: For more than ~20 photographs, contact the maintainer directly rather than opening an issue.
+  - name: Species identification help
+    url: https://turtlesurvival.org/
+    about: If you need an animal identified now, contact TSA-India. This tracker is for the software.

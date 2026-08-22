@@ -1,0 +1,61 @@
+name: Species record correction
+description: Correct a diagnostic character, distribution, or status
+labels: ["data", "needs-review"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A citation is required. Field staff act on these characters, and the
+        WPA schedule shown determines the offence category.
+
+        **Do not include coordinates.** Nothing finer than a state.
+  - type: input
+    id: species
+    attributes:
+      label: Species
+      placeholder: Pangshura tentoria
+    validations: { required: true }
+  - type: dropdown
+    id: field
+    attributes:
+      label: Which field?
+      options:
+        - key_character
+        - diagnostics
+        - distribution_states
+        - iucn.status
+        - cites
+        - wpa_2022
+        - habitat
+        - confusion_with
+        - mp_notes
+        - other
+    validations: { required: true }
+  - type: textarea
+    id: current
+    attributes:
+      label: What it currently says
+    validations: { required: true }
+  - type: textarea
+    id: proposed
+    attributes:
+      label: What it should say
+      description: Write the replacement exactly as it should appear. Your own words, not text copied from a handbook.
+    validations: { required: true }
+  - type: textarea
+    id: citation
+    attributes:
+      label: Citation
+      description: Paper, handbook, gazette notification, or an institutional record with an accession number.
+    validations: { required: true }
+  - type: checkboxes
+    id: legal
+    attributes:
+      label: If changing wpa_2022 or cites
+      options:
+        - label: I verified this against the Gazette notification or the CITES appendices directly, not a secondary compilation.
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else
+      description: How this came up. If it was a misidentification in the field, that context is useful.

@@ -1,0 +1,48 @@
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install (no torch — the data layer must not need it)
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy pytest
+      - name: Validate reference data
+        run: python -m scripts.validate_db
+      - name: Run tests
+        run: python -m pytest test_smoke.py -q
+
+  privacy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: No locality data or secrets committed
+        run: |
+          set -e
+          fail=0
+          for d in contributions records logs; do
+            if git ls-files --error-unmatch "$d" >/dev/null 2>&1; then
+              echo "::error::$d/ is tracked. It may contain locality data."; fail=1
+            fi
+          done
+          if git ls-files | grep -qE '\.env$|\.pt$'; then
+            echo "::error::A .env or model weights file is tracked."; fail=1
+          fi
+          if git ls-files -z | xargs -0 grep -lIE '[0-9]{1,2}\.[0-9]{5,}[, ]+[0-9]{2,3}\.[0-9]{5,}' 2>/dev/null | grep -v traffic_2023 | grep .; then
+            echo "::error::Possible coordinates in a tracked file."; fail=1
+          fi
+          exit $fail

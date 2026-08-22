@@ -1,0 +1,46 @@
+name: Bug report
+description: Something in the software is broken
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        If the tool gave a **wrong species determination**, that is not
+        necessarily a bug — check whether it reported CONFIRMED or something
+        lower. A wrong INDETERMINATE is the system working. A wrong CONFIRMED
+        is worth reporting.
+
+        Do not paste determination logs containing locality notes.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+    validations: { required: true }
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations: { required: true }
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations: { required: true }
+  - type: input
+    id: os
+    attributes:
+      label: Operating system and Python version
+      placeholder: Windows 10, Python 3.12
+  - type: dropdown
+    id: model
+    attributes:
+      label: Model state
+      options:
+        - No model installed (key and reference only)
+        - Model installed, calibrated
+        - Model installed, NOT calibrated
+  - type: textarea
+    id: traceback
+    attributes:
+      label: Error output
+      render: shell
