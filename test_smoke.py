@@ -231,6 +231,27 @@ def test_no_capture_lands_in_two_splits():
     assert val, "eight captures must yield a validation split"
 
 
+def test_capture_ids_cannot_contain_the_frame_separator():
+    """`one--two` as a capture id would split into a different capture on read."""
+    import re
+
+    from training.ingest_field_images import CAPTURE_RE
+    assert CAPTURE_RE.match("chambal-2026-08-19")
+    assert CAPTURE_RE.match("IMG_0431")
+    assert not CAPTURE_RE.match("with space")
+    assert not CAPTURE_RE.match("-leading")
+    assert re.search("--", "two--parts"), "the guard in ingest also rejects this"
+
+
+def test_ingested_names_round_trip_through_the_splitter():
+    """What ingest writes must be what prepare_dataset groups on."""
+    from pathlib import Path
+
+    from training.prepare_dataset import capture_id
+    assert capture_id(Path("chambal-2026-08-19--01.jpg")) == "chambal-2026-08-19"
+    assert capture_id(Path("chambal-2026-08-19--12.jpg")) == "chambal-2026-08-19"
+
+
 def test_a_single_capture_class_gets_no_validation_split():
     """Better an admitted blind spot than a validation number that means nothing."""
     import random
