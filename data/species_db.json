@@ -1,0 +1,1761 @@
+{
+  "schema_version": "1.0",
+  "compiled": "2026-08",
+  "scope": "Non-marine Chelonia of India (Geoemydidae, Trionychidae, Testudinidae) + one exotic invasive routinely encountered in seizures.",
+  "legal_basis": {
+    "wpa": "Wild Life (Protection) Amendment Act, 2022 — Schedule I & II reptile lists as compiled by ZSI Fauna of India Checklist: Reptilia v1.0 (Mohapatra et al. 2024), Table 4.",
+    "caution": "Schedule assignment is reproduced for field triage only. For any offence report, FIR, or court submission, verify against the Gazette notification of the Wild Life (Protection) Amendment Act, 2022. This tool is NOT a legal authority.",
+    "gazette_url": "https://www.indiacode.nic.in/handle/123456789/1726",
+    "zsi_checklist_url": "https://zsi.gov.in/uploads/documents/checklist/english/119_REPTILIA.pdf",
+    "enforcement_reference": "Cross-checked against Singh, Badola & Fernandes (2023), Identification Cards: Tortoises and Freshwater Turtles of India (TRAFFIC India / TSA-India / WWF-India) — the reference issued to Indian enforcement agencies. WPA schedules agree in full. IUCN categories on the printed cards predate several reassessments; see scripts/reconcile_traffic.py."
+  },
+  "species": [
+    {
+      "id": "lissemys_punctata",
+      "scientific_name": "Lissemys punctata",
+      "authority": "(Bonnaterre, 1789)",
+      "family": "Trionychidae",
+      "common_en": "Indian Flapshell Turtle",
+      "common_hi": "भारतीय चपटी कछुआ",
+      "iucn": {
+        "status": "LC",
+        "year": 2000,
+        "note": "Widely traded despite Schedule I listing; regional depletion documented."
+      },
+      "cites": "Appendix II",
+      "wpa_2022": "Schedule I",
+      "max_scl_mm": 350,
+      "habitat": "Extreme habitat generalist — ponds, tanks, canals, paddy fields, marshes, slow rivers, even urban drains. Aestivates in mud through dry season.",
+      "distribution_states": [
+        "Andhra Pradesh",
+        "Assam",
+        "Bihar",
+        "Chhattisgarh",
+        "Goa",
+        "Gujarat",
+        "Haryana",
+        "Himachal Pradesh",
+        "Jharkhand",
+        "Karnataka",
+        "Kerala",
+        "Madhya Pradesh",
+        "Maharashtra",
+        "Meghalaya",
+        "Odisha",
+        "Punjab",
+        "Rajasthan",
+        "Sikkim",
+        "Tamil Nadu",
+        "Telangana",
+        "Uttar Pradesh",
+        "Uttarakhand",
+        "West Bengal"
+      ],
+      "mp_status": "resident",
+      "mp_notes": "The default softshell in MP. Commonest chelonian in seizures, road-kills and rescue calls across all four tiger reserves.",
+      "key_character": "Pair of hinged femoral flaps on the rear plastron that fold down to conceal the withdrawn hindlimbs. No other Indian softshell has these. Diagnostic even on a damaged or partial specimen.",
+      "diagnostics": [
+        "Carapace soft, leathery, rounded-oval, olive to dark green; juveniles with scattered yellow spots that fade with age",
+        "Femoral (plastral) flaps present — the single decisive character",
+        "Seven plastral callosities in adults (epiplastral, entoplastral, paired hyo-hypoplastral, paired xiphiplastral)",
+        "Snout short and blunt; head with fine yellow spotting or reticulation, never bold radiating streaks",
+        "Small — rarely over 300 mm carapace length"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "nilssonia_gangetica",
+          "discriminator": "N. gangetica lacks femoral flaps entirely and has a longer, more tapered snout; juveniles show large dark-centred ocelli, not fine yellow spots."
+        },
+        {
+          "species_id": "nilssonia_hurum",
+          "discriminator": "N. hurum lacks flaps and has bold yellow spots on the dorsal surface of the head; L. punctata head spotting is fine and diffuse."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Bhupathy, S., Webb, R.G. & Praschag, P. (2014). Lissemys punctata (Bonnaterre 1789) — Indian Flapshell Turtle. Conservation Biology of Freshwater Turtles and Tortoises, Chelonian Research Monographs 5(7):076.",
+          "url": "https://iucn-tftsg.org/cbftt/"
+        },
+        {
+          "citation": "Das, I. (2002). A Photographic Guide to Snakes and Other Reptiles of India. New Holland."
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "nilssonia_gangetica",
+      "scientific_name": "Nilssonia gangetica",
+      "authority": "(Cuvier, 1825)",
+      "family": "Trionychidae",
+      "common_en": "Indian Softshell Turtle",
+      "common_hi": "गंगा की सॉफ्टशेल कछुआ",
+      "iucn": {
+        "status": "EN",
+        "year": 2019,
+        "note": "Endangered; heavy exploitation for meat and calipee across the Ganga basin."
+      },
+      "cites": "Appendix I",
+      "wpa_2022": "Schedule I",
+      "max_scl_mm": 940,
+      "habitat": "Large and medium rivers, deep pools, reservoirs. Ganga, Yamuna, Chambal, Son, Narmada, Mahanadi, Indus and Brahmaputra systems.",
+      "distribution_states": [
+        "Assam",
+        "Bihar",
+        "Chhattisgarh",
+        "Gujarat",
+        "Haryana",
+        "Himachal Pradesh",
+        "Jharkhand",
+        "Madhya Pradesh",
+        "Meghalaya",
+        "Odisha",
+        "Punjab",
+        "Rajasthan",
+        "Uttar Pradesh",
+        "Uttarakhand",
+        "West Bengal"
+      ],
+      "mp_status": "resident",
+      "mp_notes": "Chambal (NCS), Son, Ken, Betwa and Narmada. Recorded from Panna and the Chambal sanctuary reaches; scattered records from Narmada tributaries near Satpura.",
+      "key_character": "Large softshell with NO femoral flaps and a head marked by dark longitudinal streaks converging on the snout. Juveniles carry four to six dark-centred, pale-ringed ocelli on the carapace.",
+      "diagnostics": [
+        "Carapace olive-green, soft, oval, without any plastral flaps",
+        "Juveniles: 4–6 dark ocelli in a longitudinal series; these fade to a plain olive carapace with age",
+        "Head with dark streaks radiating backward from the eye and snout; NO discrete yellow spots on the head crown",
+        "Snout moderately long, proboscis-like",
+        "Grows very large — confirmed to 940 mm carapace length"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "nilssonia_hurum",
+          "discriminator": "N. hurum has conspicuous round yellow spots on the top of the head and 4–6 large yellow-ringed ocelli on the carapace; N. gangetica has streaks, not spots, on the head."
+        },
+        {
+          "species_id": "nilssonia_leithii",
+          "discriminator": "N. leithii is peninsular (Godavari, Krishna, Cauvery, Bhima); juveniles have dark ocelli but the head lacks the strong radiating streak pattern. Geography usually resolves it."
+        },
+        {
+          "species_id": "lissemys_punctata",
+          "discriminator": "L. punctata has femoral flaps; N. gangetica has none."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Praschag, P., Ahmed, M.F., Das, I. & Singh, S. (2019). Nilssonia gangetica. Chelonian Research Monographs 5(12):115.",
+          "url": "https://iucn-tftsg.org/cbftt/"
+        },
+        {
+          "citation": "Rhodin, A.G.J. et al. (2021). Turtles of the World: Annotated Checklist and Atlas, 9th Ed. Chelonian Research Monographs 8.",
+          "url": "https://iucn-tftsg.org/checklist/"
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "nilssonia_hurum",
+      "scientific_name": "Nilssonia hurum",
+      "authority": "(Gray, 1831)",
+      "family": "Trionychidae",
+      "common_en": "Indian Peacock Softshell Turtle",
+      "common_hi": "मोर सॉफ्टशेल कछुआ",
+      "iucn": {
+        "status": "EN",
+        "year": 2019,
+        "note": "Endangered."
+      },
+      "cites": "Appendix I",
+      "wpa_2022": "Schedule I",
+      "max_scl_mm": 600,
+      "habitat": "Rivers, oxbow lakes, large ponds and temple tanks of the Ganga–Brahmaputra basin.",
+      "distribution_states": [
+        "Assam",
+        "Bihar",
+        "Jharkhand",
+        "Madhya Pradesh",
+        "Maharashtra",
+        "Manipur",
+        "Meghalaya",
+        "Mizoram",
+        "Odisha",
+        "Rajasthan",
+        "Tripura",
+        "Uttar Pradesh",
+        "Uttarakhand",
+        "West Bengal"
+      ],
+      "mp_status": "marginal",
+      "mp_notes": "Northeastern MP only — Son and lower Ken/Betwa reaches. Any MP record deserves voucher photographs and confirmation.",
+      "key_character": "Round yellow spots on the crown of the head (the 'peacock' pattern) plus four to six large ocelli with pale rings on the carapace. Head spots persist into adulthood.",
+      "diagnostics": [
+        "Carapace olive to dark grey-green with 4–6 large ocelli, each dark-centred and pale-ringed — more conspicuous and better ringed than in N. gangetica",
+        "Distinct round yellow spots scattered over the top of the head",
+        "No plastral flaps",
+        "Snout shorter and blunter than N. gangetica"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "nilssonia_gangetica",
+          "discriminator": "Head pattern is the reliable split: discrete yellow spots (hurum) vs. dark radiating streaks (gangetica)."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Ahmed, M.F. & Das, I. (2010). Turtles and Tortoises of Northeast India. Aaranyak."
+        },
+        {
+          "citation": "Rhodin, A.G.J. et al. (2021). Turtles of the World, 9th Ed. Chelonian Research Monographs 8.",
+          "url": "https://iucn-tftsg.org/checklist/"
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "nilssonia_leithii",
+      "scientific_name": "Nilssonia leithii",
+      "authority": "(Gray, 1872)",
+      "family": "Trionychidae",
+      "common_en": "Leith's Softshell Turtle",
+      "common_hi": "लीथ की सॉफ्टशेल कछुआ",
+      "iucn": {
+        "status": "CR",
+        "year": 2019,
+        "note": "Critically Endangered; peninsular endemic, severe decline from targeted harvest."
+      },
+      "cites": "Appendix I",
+      "wpa_2022": "Schedule I",
+      "max_scl_mm": 660,
+      "habitat": "Peninsular rivers and reservoirs — Godavari, Krishna, Bhima, Cauvery, Tungabhadra, Moyar systems.",
+      "distribution_states": [
+        "Andhra Pradesh",
+        "Chhattisgarh",
+        "Karnataka",
+        "Kerala",
+        "Madhya Pradesh",
+        "Maharashtra",
+        "Odisha",
+        "Tamil Nadu",
+        "Telangana"
+      ],
+      "mp_status": "marginal",
+      "mp_notes": "Southern MP / Godavari headwaters only. A softshell from northern or central MP is far more likely N. gangetica — treat any leithii determination there as provisional pending expert review.",
+      "key_character": "Row of wart-like tubercles along the leading edge of the carapace, and a reddish-orange marking on the head. Peninsular drainages only. These are positive characters — earlier drafts of this entry relied on the absence of other species' markings, which is not usable in the field.",
+      "diagnostics": [
+        "Wart-like tubercles in a row along the anterior carapace margin",
+        "Head bearing a reddish to orange spot or blotch",
+        "Carapace olive-brown; juveniles with four dark ocelli that fade with age",
+        "No plastral flaps",
+        "Peninsular rivers — Bhavani, Godavari and Moyar systems and their tributaries"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "nilssonia_gangetica",
+          "discriminator": "Overlap zone is narrow. Use drainage basin first: Ganga/Narmada = gangetica; Godavari/Krishna/Cauvery = leithii. Confirm with head pattern."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Praschag, P. & Vasudevan, K. (2019). Nilssonia leithii. IUCN Red List assessment."
+        },
+        {
+          "citation": "CITES CoP19 (2022) — transfer of Nilssonia leithii between Appendices."
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "chitra_indica",
+      "scientific_name": "Chitra indica",
+      "authority": "(Gray, 1831)",
+      "family": "Trionychidae",
+      "common_en": "Indian Narrow-headed Softshell Turtle",
+      "common_hi": "सांपमुंही कछुआ",
+      "iucn": {
+        "status": "CR",
+        "year": 2019,
+        "note": "Critically Endangered; among India's most threatened freshwater turtles."
+      },
+      "cites": "Appendix II",
+      "wpa_2022": "Schedule I",
+      "max_scl_mm": 1100,
+      "habitat": "Deep, clear, sandy-bottomed stretches of large rivers. Buries in sand in shallows and ambushes fish.",
+      "distribution_states": [
+        "Andhra Pradesh",
+        "Assam",
+        "Bihar",
+        "Chhattisgarh",
+        "Gujarat",
+        "Haryana",
+        "Himachal Pradesh",
+        "Jharkhand",
+        "Karnataka",
+        "Madhya Pradesh",
+        "Maharashtra",
+        "Odisha",
+        "Punjab",
+        "Rajasthan",
+        "Tamil Nadu",
+        "Telangana",
+        "Uttar Pradesh",
+        "Uttarakhand",
+        "West Bengal"
+      ],
+      "mp_status": "resident",
+      "mp_notes": "Chambal (National Chambal Sanctuary) is a global stronghold. Also Son and Ken. Any Chambal-reach softshell with a needle head is this species.",
+      "key_character": "Absurdly small head on a very long neck, with tiny eyes placed close to the tip of the snout. The head is narrow enough to be unmistakable at any age. Carapace very flat, elongate, with fine wavy longitudinal striping.",
+      "diagnostics": [
+        "Head extremely narrow and elongate; eyes minute and set far forward, near the snout tip",
+        "Carapace very flat and oval-elongate, olive with fine wavy dark and pale longitudinal lines or reticulations",
+        "A V-shaped mark begins at the nape and extends back onto the carapace",
+        "No plastral flaps",
+        "Very large — the largest Indian softshell, over 1 m carapace length",
+        "Neck long, retracted in a distinctive S"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "nilssonia_gangetica",
+          "discriminator": "N. gangetica has a normally proportioned head with laterally placed eyes; the head-to-carapace proportion in C. indica is unmistakable once seen."
+        },
+        {
+          "species_id": "pelochelys_cantorii",
+          "discriminator": "P. cantorii also has a broad flat body but its head is broad, not needle-like, and it is coastal/estuarine (Odisha, Kerala), not riverine-inland."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Das, I. & Singh, S. (2009). Chitra indica. Chelonian Research Monographs 5:027.",
+          "url": "https://iucn-tftsg.org/cbftt/"
+        },
+        {
+          "citation": "Nair, T. & Krishna, Y.C. (2013). Vertebrate fauna of the Chambal River basin. Journal of Threatened Taxa 5(2):3620–3641.",
+          "url": "https://threatenedtaxa.org/"
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "nilssonia_nigricans",
+      "scientific_name": "Nilssonia nigricans",
+      "authority": "(Anderson, 1875)",
+      "family": "Trionychidae",
+      "common_en": "Black Softshell Turtle",
+      "common_hi": "काला सॉफ्टशेल कछुआ",
+      "iucn": {
+        "status": "CR",
+        "year": 2021,
+        "note": "Critically Endangered; formerly assessed Extinct in the Wild, now known from wild Brahmaputra populations plus temple ponds."
+      },
+      "cites": "Appendix I",
+      "wpa_2022": "Schedule I",
+      "max_scl_mm": 900,
+      "habitat": "Brahmaputra floodplain wetlands and, famously, temple ponds in Assam, Tripura and Bangladesh.",
+      "distribution_states": [
+        "Arunachal Pradesh",
+        "Assam",
+        "Meghalaya",
+        "Nagaland",
+        "Tripura",
+        "West Bengal"
+      ],
+      "mp_status": "absent",
+      "mp_notes": "Not present in Madhya Pradesh. An MP record would indicate trade transport or captive release — treat as a seizure lead.",
+      "key_character": "Plastron dark grey with a blackish sheen, and the rear two-thirds of the upper lip white. Brahmaputra floodplain and temple ponds of the Northeast.",
+      "diagnostics": [
+        "Adults uniformly dark olive-black, carapace without ocelli",
+        "Posterior two-thirds of the upper lip white",
+        "Juveniles with scattered small yellow spots and a yellow-blotched head",
+        "No plastral flaps",
+        "Restricted to Northeast India and adjacent Bangladesh"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "nilssonia_hurum",
+          "discriminator": "N. hurum retains yellow head spots and carapace ocelli into adulthood; nigricans adults are plain and dark."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Praschag, P. et al. (2021). Nilssonia nigricans. IUCN Red List."
+        },
+        {
+          "citation": "Ahmed, M.F. & Das, I. (2010). Turtles and Tortoises of Northeast India. Aaranyak."
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "amyda_ornata",
+      "scientific_name": "Amyda ornata",
+      "authority": "(Gray, 1861)",
+      "family": "Trionychidae",
+      "common_en": "Burmese Ornate Softshell Turtle",
+      "common_hi": "सजीला सॉफ्टशेल कछुआ",
+      "iucn": {
+        "status": "VU",
+        "year": 2020,
+        "note": "Vulnerable."
+      },
+      "cites": "Appendix II",
+      "wpa_2022": "Schedule I",
+      "max_scl_mm": 700,
+      "habitat": "Rivers and streams of the Indo-Burma region.",
+      "distribution_states": [
+        "Arunachal Pradesh",
+        "Assam",
+        "Manipur",
+        "Mizoram",
+        "Nagaland",
+        "Tripura"
+      ],
+      "mp_status": "absent",
+      "mp_notes": "Not present in Madhya Pradesh.",
+      "key_character": "Long snout combined with a row of tubercles across the leading edge of the carapace and five plastral callosities. Northeast India only. Listed as Amyda cartilaginea in older references including the TRAFFIC 2023 cards.",
+      "diagnostics": [
+        "Long snout; a distinct row of tubercles along the front edge of the carapace",
+        "Plastron with five callosities",
+        "Juveniles boldly blotched yellow and black, fading in adults",
+        "No plastral flaps",
+        "Indo-Burma distribution only"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "nilssonia_hurum",
+          "discriminator": "Overlapping range in Assam. A. ornata juveniles are far more boldly and irregularly blotched; N. hurum shows discrete round ocelli."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Rhodin, A.G.J. et al. (2021). Turtles of the World, 9th Ed. Chelonian Research Monographs 8.",
+          "url": "https://iucn-tftsg.org/checklist/"
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "pelochelys_cantorii",
+      "scientific_name": "Pelochelys cantorii",
+      "authority": "Gray, 1864",
+      "family": "Trionychidae",
+      "common_en": "Asian Giant Softshell Turtle",
+      "common_hi": "एशियाई विशाल सॉफ्टशेल कछुआ",
+      "iucn": {
+        "status": "CR",
+        "year": 2021,
+        "note": "Critically Endangered; extremely rare in India."
+      },
+      "cites": "Appendix II",
+      "wpa_2022": "Schedule I",
+      "max_scl_mm": 1000,
+      "habitat": "Lower reaches of coastal rivers and estuaries; buries in sand or mud, surfacing infrequently.",
+      "distribution_states": [
+        "Andhra Pradesh",
+        "Kerala",
+        "Odisha",
+        "Tamil Nadu",
+        "West Bengal"
+      ],
+      "mp_status": "absent",
+      "mp_notes": "Not present in Madhya Pradesh.",
+      "key_character": "Very broad, smooth, olive carapace with an extremely short snout and eyes set well forward; head broad, not narrow. Coastal/estuarine.",
+      "diagnostics": [
+        "Carapace broad, smooth, uniform olive to grey-green, without ocelli or striping",
+        "Snout very short — barely projecting",
+        "Small flap of skin in the gular region; plastron cream-coloured",
+        "Head broad and flat, eyes close to the snout tip but the head is NOT narrow",
+        "No plastral flaps"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "chitra_indica",
+          "discriminator": "C. indica has a needle-narrow head and fine longitudinal carapace striping; P. cantorii is broad-headed and plain."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Rhodin, A.G.J. et al. (2021). Turtles of the World, 9th Ed.",
+          "url": "https://iucn-tftsg.org/checklist/"
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "pangshura_tecta",
+      "scientific_name": "Pangshura tecta",
+      "authority": "(Gray, 1831)",
+      "family": "Geoemydidae",
+      "common_en": "Indian Roofed Turtle",
+      "common_hi": "छत्री कछुआ",
+      "iucn": {
+        "status": "LC",
+        "year": 2019,
+        "note": "Downlisted to Least Concern in the 2019 reassessment; still Schedule I and heavily traded as a pet."
+      },
+      "cites": "Appendix I",
+      "wpa_2022": "Schedule I",
+      "max_scl_mm": 230,
+      "habitat": "Slow rivers, canals, oxbows, ponds and reservoirs of the Ganga–Indus–Brahmaputra plains.",
+      "distribution_states": [
+        "Arunachal Pradesh",
+        "Assam",
+        "Bihar",
+        "Chhattisgarh",
+        "Gujarat",
+        "Haryana",
+        "Himachal Pradesh",
+        "Jharkhand",
+        "Madhya Pradesh",
+        "Manipur",
+        "Meghalaya",
+        "Mizoram",
+        "Nagaland",
+        "Odisha",
+        "Punjab",
+        "Rajasthan",
+        "Tripura",
+        "Uttar Pradesh",
+        "Uttarakhand",
+        "West Bengal"
+      ],
+      "mp_status": "resident",
+      "mp_notes": "Chambal, Ken, Betwa, Son and larger tanks. Very common in pet-trade seizures.",
+      "key_character": "Orange to reddish crescent-shaped marking behind and below the eye, curving upward to meet its partner on the forehead. Vertebral keel high, with the third vertebral scute raised into a backward-pointing knob. Plastron and bridge coral-red.",
+      "diagnostics": [
+        "Vertebral keel high and continuous; third vertebral scute strongly humped with a posteriorly directed projection",
+        "Plastron orange to coral-red with a dark blotch on each scute",
+        "Head with an orange or reddish crescent postocular marking curving up from below the eye to meet at the forehead; neck dark with fine yellow stripes",
+        "Small — typically 180–230 mm",
+        "Carapace olive-brown with an orange or reddish vertebral streak"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "pangshura_tentoria",
+          "discriminator": "The critical MP separation. P. tecta retains a spined, strongly elevated third vertebral into adulthood and has a red head marking; P. tentoria has a lower, smoother keel without a persistent spine and a differently shaped head marking. Check the third vertebral in profile."
+        },
+        {
+          "species_id": "pangshura_smithii",
+          "discriminator": "P. smithii is duller brown with a low keel and a dark-blotched, not coral-red, plastron."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Das, I. (1995). Turtles and Tortoises of India. WWF-India / Oxford University Press."
+        },
+        {
+          "citation": "Rhodin, A.G.J. et al. (2021). Turtles of the World, 9th Ed.",
+          "url": "https://iucn-tftsg.org/checklist/"
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "pangshura_tentoria",
+      "scientific_name": "Pangshura tentoria",
+      "authority": "(Gray, 1834)",
+      "family": "Geoemydidae",
+      "common_en": "Indian Tent Turtle",
+      "common_hi": "तंबू कछुआ",
+      "iucn": {
+        "status": "LC",
+        "year": 2019,
+        "note": "Least Concern. Three subspecies recognised (tentoria, circumdata, flaviventer)."
+      },
+      "cites": "Appendix II",
+      "wpa_2022": "Schedule I",
+      "max_scl_mm": 260,
+      "habitat": "Rivers and large streams; strongly basking. Frequently seen hauled out on rocks and logs.",
+      "distribution_states": [
+        "Andhra Pradesh",
+        "Arunachal Pradesh",
+        "Assam",
+        "Bihar",
+        "Chhattisgarh",
+        "Gujarat",
+        "Haryana",
+        "Jharkhand",
+        "Karnataka",
+        "Madhya Pradesh",
+        "Maharashtra",
+        "Meghalaya",
+        "Odisha",
+        "Rajasthan",
+        "Telangana",
+        "Tripura",
+        "Uttar Pradesh",
+        "Uttarakhand",
+        "West Bengal"
+      ],
+      "mp_status": "resident",
+      "mp_notes": "The commonest basking turtle in MP rivers. P. t. circumdata in the western Ganga tributaries (Chambal, Betwa); P. t. tentoria in peninsular drainages including the Narmada and Wainganga.",
+      "key_character": "Distinct vertebral keel on a brown carapace carrying an amber or hazel stripe along the first three vertebral scutes. Plastron yellow with large black blotches — NOT the coral-red plastron of P. tecta.",
+      "diagnostics": [
+        "Carapace oval, brown, with a distinct but low vertebral keel",
+        "Amber, hazel or reddish stripe running along the first three vertebral scutes",
+        "Plastron yellow with large black blotches",
+        "Head olive to brownish; third vertebral not drawn into a persistent spine",
+        "Habitual basker — photograph in lateral profile to show the keel"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "pangshura_tecta",
+          "discriminator": "Third vertebral scute: spined and strongly elevated in P. tecta, low and rounded in P. tentoria. Photograph the animal in lateral profile to resolve."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Das, I. (1995). Turtles and Tortoises of India. WWF-India / Oxford University Press."
+        },
+        {
+          "citation": "Moll, E.O. (1987). Survey of the freshwater turtles of India. Part II: The genus Kachuga. J. Bombay Nat. Hist. Soc. 84:7–25."
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "pangshura_smithii",
+      "scientific_name": "Pangshura smithii",
+      "authority": "(Gray, 1863)",
+      "family": "Geoemydidae",
+      "common_en": "Brown Roofed Turtle",
+      "common_hi": "भूरा छत्री कछुआ",
+      "iucn": {
+        "status": "LC",
+        "year": 2019,
+        "note": "Least Concern."
+      },
+      "cites": "Appendix II",
+      "wpa_2022": "Schedule II",
+      "max_scl_mm": 235,
+      "habitat": "Rivers and canals of the Indus and Ganga plains.",
+      "distribution_states": [
+        "Arunachal Pradesh",
+        "Assam",
+        "Bihar",
+        "Haryana",
+        "Himachal Pradesh",
+        "Madhya Pradesh",
+        "Meghalaya",
+        "Nagaland",
+        "Punjab",
+        "Rajasthan",
+        "Uttar Pradesh",
+        "Uttarakhand",
+        "West Bengal"
+      ],
+      "mp_status": "marginal",
+      "mp_notes": "TRAFFIC/TSA-India (2023) do NOT list Madhya Pradesh. Treated as MARGINAL. Note this is one of only three Indian chelonians on Schedule II rather than Schedule I, so a tecta/smithii error changes the offence category.",
+      "key_character": "Dull brown, low-keeled carapace with a distinctly dark, heavily blotched plastron — never the coral-red plastron of P. tecta. Posterior marginals weakly serrated.",
+      "diagnostics": [
+        "Carapace uniform brown to olive-brown with a low, blunt vertebral keel",
+        "Plastron yellowish with large dark brown or black blotches covering much of each scute",
+        "Head brown with a pale yellow streak behind the eye; crown lacking a red arrow mark",
+        "Posterior carapace margin weakly serrated"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "pangshura_tecta",
+          "discriminator": "LEGALLY SIGNIFICANT PAIR — P. tecta is Schedule I, P. smithii is Schedule II. Separate on plastron colour (coral-red vs. dark-blotched yellow) and the third vertebral spine (present vs. absent)."
+        },
+        {
+          "species_id": "pangshura_tentoria",
+          "discriminator": "P. tentoria has a pink to red plastron; P. smithii's is dark-blotched."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Moll, E.O. (1987). Survey of the freshwater turtles of India. Part II: The genus Kachuga. J. Bombay Nat. Hist. Soc. 84:7–25."
+        },
+        {
+          "citation": "Mohapatra, P.P. et al. (2024). Checklist of Fauna of India: Chordata: Reptilia. ZSI.",
+          "url": "https://zsi.gov.in/uploads/documents/checklist/english/119_REPTILIA.pdf"
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "pangshura_sylhetensis",
+      "scientific_name": "Pangshura sylhetensis",
+      "authority": "Jerdon, 1870",
+      "family": "Geoemydidae",
+      "common_en": "Assam Roofed Turtle",
+      "common_hi": "असम छत्री कछुआ",
+      "iucn": {
+        "status": "EN",
+        "year": 2019,
+        "note": "Endangered; smallest and most range-restricted Pangshura."
+      },
+      "cites": "Appendix II",
+      "wpa_2022": "Schedule I",
+      "max_scl_mm": 200,
+      "habitat": "Small hill streams and floodplain wetlands of the Brahmaputra basin.",
+      "distribution_states": [
+        "Arunachal Pradesh",
+        "Assam",
+        "Manipur",
+        "Meghalaya",
+        "Mizoram",
+        "Nagaland",
+        "West Bengal"
+      ],
+      "mp_status": "absent",
+      "mp_notes": "Not present in Madhya Pradesh.",
+      "key_character": "Small Pangshura with 26 marginal scutes instead of the usual 24 — an extra pair. Northeast India only.",
+      "diagnostics": [
+        "26 marginals (extra pair) — the definitive scute count",
+        "Narrow yellow stripe from the eye to the middle of the back of the head",
+        "Carapace brown with a serrated posterior margin and a moderate keel",
+        "Very small — rarely above 200 mm",
+        "Restricted to Northeast India"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "pangshura_tecta",
+          "discriminator": "Count marginals: 26 in sylhetensis, 24 in tecta. Ranges do not overlap in practice."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Ahmed, M.F. & Das, I. (2010). Turtles and Tortoises of Northeast India. Aaranyak."
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "batagur_kachuga",
+      "scientific_name": "Batagur kachuga",
+      "authority": "(Gray, 1831)",
+      "family": "Geoemydidae",
+      "common_en": "Red-crowned Roofed Turtle",
+      "common_hi": "लाल मुकुट कछुआ",
+      "iucn": {
+        "status": "CR",
+        "year": 2019,
+        "note": "Critically Endangered. The National Chambal Sanctuary holds effectively the entire viable global population."
+      },
+      "cites": "Appendix I",
+      "wpa_2022": "Schedule I",
+      "max_scl_mm": 560,
+      "habitat": "Deep, fast stretches of large rivers with sandbanks for nesting. Chambal is the last stronghold.",
+      "distribution_states": [
+        "Assam",
+        "Bihar",
+        "Chhattisgarh",
+        "Haryana",
+        "Jharkhand",
+        "Madhya Pradesh",
+        "Rajasthan",
+        "Uttar Pradesh",
+        "Uttarakhand",
+        "West Bengal"
+      ],
+      "mp_status": "resident",
+      "mp_notes": "National Chambal Sanctuary (Morena/Bhind). Highest conservation priority chelonian in Madhya Pradesh. Any record must be reported to the sanctuary DFO and TSA-India.",
+      "key_character": "Breeding males develop a spectacular crimson-red and blue head and neck with bright yellow-red bands — unmistakable. Females and non-breeding animals are large, plain olive-brown with a smooth, high-domed carapace and a pale head.",
+      "diagnostics": [
+        "Breeding male: head, neck and forelimbs brilliant scarlet, crimson and blue — no other Indian turtle looks like this",
+        "Female: very large (to 560 mm), plain olive to grey-brown, smooth carapace, moderately domed",
+        "Carapace with a weak keel in juveniles that smooths with age; posterior margin not serrated in adults",
+        "Head relatively small with a slightly upturned snout"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "batagur_dhongoka",
+          "discriminator": "B. dhongoka juveniles and subadults have three dark longitudinal stripes on the carapace and males develop a black head stripe, not a red head. Females of both are large and plain — use head/snout profile and check with a specialist."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Nair, T. & Krishna, Y.C. (2013). Vertebrate fauna of the Chambal River basin. Journal of Threatened Taxa 5(2):3620–3641.",
+          "url": "https://threatenedtaxa.org/"
+        },
+        {
+          "citation": "Turtle Survival Alliance India — Batagur kachuga recovery programme.",
+          "url": "https://turtlesurvival.org/"
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "batagur_dhongoka",
+      "scientific_name": "Batagur dhongoka",
+      "authority": "(Gray, 1834)",
+      "family": "Geoemydidae",
+      "common_en": "Three-striped Roofed Turtle",
+      "common_hi": "तीन धारी कछुआ",
+      "iucn": {
+        "status": "CR",
+        "year": 2019,
+        "note": "Critically Endangered."
+      },
+      "cites": "Appendix II",
+      "wpa_2022": "Schedule I",
+      "max_scl_mm": 480,
+      "habitat": "Large rivers with deep pools and extensive sandbanks; Ganga, Yamuna, Chambal, Son, Ghaghara.",
+      "distribution_states": [
+        "Bihar",
+        "Chhattisgarh",
+        "Jharkhand",
+        "Madhya Pradesh",
+        "Rajasthan",
+        "Uttar Pradesh",
+        "West Bengal"
+      ],
+      "mp_status": "resident",
+      "mp_notes": "Chambal and Son. Nests communally on midstream sandbars — nesting-season patrols in Morena/Bhind should expect this species alongside B. kachuga.",
+      "key_character": "Three dark longitudinal stripes along the carapace, strongest in juveniles and subadults. Breeding males develop a black stripe along the top of the head and neck, not red.",
+      "diagnostics": [
+        "Juvenile/subadult carapace olive with three dark longitudinal stripes (one vertebral, two lateral)",
+        "Adult females large (to 480 mm), stripes fading to a plain brown-olive",
+        "Yellow line running across the head above the tympanum; plastron plain",
+        "Breeding male with a dark median stripe on the crown and neck",
+        "Carapace low-domed and smooth; snout slightly projecting"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "batagur_kachuga",
+          "discriminator": "Breeding males are unmistakable (red vs. black head). For females and juveniles, look for the three carapace stripes of dhongoka."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Moll, E.O. (1987). Survey of the freshwater turtles of India. J. Bombay Nat. Hist. Soc."
+        },
+        {
+          "citation": "Rhodin, A.G.J. et al. (2021). Turtles of the World, 9th Ed.",
+          "url": "https://iucn-tftsg.org/checklist/"
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "batagur_baska",
+      "scientific_name": "Batagur baska",
+      "authority": "(Gray, 1831)",
+      "family": "Geoemydidae",
+      "common_en": "Northern River Terrapin",
+      "common_hi": "उत्तरी नदी कछुआ",
+      "iucn": {
+        "status": "CR",
+        "year": 2019,
+        "note": "Critically Endangered; functionally extinct in most of its former range."
+      },
+      "cites": "Appendix I",
+      "wpa_2022": "Schedule I",
+      "max_scl_mm": 600,
+      "habitat": "Estuaries and tidal mangrove creeks of the Sundarbans.",
+      "distribution_states": [
+        "Odisha",
+        "West Bengal"
+      ],
+      "mp_status": "absent",
+      "mp_notes": "Not present in Madhya Pradesh. Any inland record indicates trade.",
+      "key_character": "Large estuarine terrapin with only four claws on each forelimb; breeding males turn jet-black with a white iris. Sundarbans mangrove distribution.",
+      "diagnostics": [
+        "Four claws per forelimb (most other Indian geoemydids have five)",
+        "Carapace smooth, low-domed, olive-brown to black",
+        "Breeding males become deep black with a striking pale iris",
+        "Snout short and upturned",
+        "Estuarine/mangrove habitat"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "batagur_kachuga",
+          "discriminator": "Habitat separates them cleanly: baska is estuarine (Sundarbans), kachuga is freshwater riverine (Chambal/Ganga). Count forelimb claws — four in baska."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Rhodin, A.G.J. et al. (2021). Turtles of the World, 9th Ed.",
+          "url": "https://iucn-tftsg.org/checklist/"
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "hardella_thurjii",
+      "scientific_name": "Hardella thurjii",
+      "authority": "(Gray, 1831)",
+      "family": "Geoemydidae",
+      "common_en": "Crowned River Turtle",
+      "common_hi": "मुकुटधारी नदी कछुआ",
+      "iucn": {
+        "status": "VU",
+        "year": 2019,
+        "note": "Vulnerable."
+      },
+      "cites": "Appendix II",
+      "wpa_2022": "Schedule I",
+      "max_scl_mm": 610,
+      "habitat": "Slow, deep stretches of large rivers, canals and oxbow lakes of the Ganga and Indus basins. Largely herbivorous.",
+      "distribution_states": [
+        "Assam",
+        "Bihar",
+        "Chhattisgarh",
+        "Haryana",
+        "Jharkhand",
+        "Madhya Pradesh",
+        "Manipur",
+        "Meghalaya",
+        "Mizoram",
+        "Punjab",
+        "Rajasthan",
+        "Tripura",
+        "Uttar Pradesh",
+        "West Bengal"
+      ],
+      "mp_status": "resident",
+      "mp_notes": "Chambal and Son. Extreme sexual size dimorphism — a very large female alongside a small male is characteristic and often confuses field staff into recording two species.",
+      "key_character": "Four yellow to orange stripes along each side of the head and forehead. Head large, with the snout projecting beyond the lower jaw. Extreme sexual size dimorphism: females to 610 mm, males rarely over 180 mm.",
+      "diagnostics": [
+        "Head dark with four clean yellowish-orange longitudinal stripes on each side",
+        "Snout projects beyond the lower jaw; limbs brown with yellow edging",
+        "Carapace with three keels in juveniles; dark brown to black, keels fading in large females",
+        "Plastron large and dark, often black with yellow borders",
+        "Females enormously larger than males — note this before recording two 'species' from one basking group"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "melanochelys_trijuga",
+          "discriminator": "M. trijuga has yellow-orange spots or short streaks on the head, not long clean stripes, and reaches only ~380 mm. Also a pond/stream turtle rather than a big-river specialist."
+        },
+        {
+          "species_id": "morenia_petersi",
+          "discriminator": "M. petersi is small (~200 mm) with fine yellow lines on the head and pale-centred carapace scutes."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Das, I. (1995). Turtles and Tortoises of India. WWF-India / Oxford University Press."
+        },
+        {
+          "citation": "Rhodin, A.G.J. et al. (2021). Turtles of the World, 9th Ed.",
+          "url": "https://iucn-tftsg.org/checklist/"
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "melanochelys_trijuga",
+      "scientific_name": "Melanochelys trijuga",
+      "authority": "(Schweigger, 1812)",
+      "family": "Geoemydidae",
+      "common_en": "Indian Black Turtle",
+      "common_hi": "काला कछुआ",
+      "iucn": {
+        "status": "NT",
+        "year": 2020,
+        "note": "Near Threatened. Several subspecies across peninsular India and Sri Lanka."
+      },
+      "cites": "Appendix II",
+      "wpa_2022": "Schedule II",
+      "max_scl_mm": 383,
+      "habitat": "Ponds, tanks, marshes, slow streams and moist forest floor. Highly terrestrial for a geoemydid — frequently found walking on land after rain.",
+      "distribution_states": [
+        "Andhra Pradesh",
+        "Assam",
+        "Bihar",
+        "Chhattisgarh",
+        "Goa",
+        "Gujarat",
+        "Haryana",
+        "Jharkhand",
+        "Karnataka",
+        "Kerala",
+        "Madhya Pradesh",
+        "Maharashtra",
+        "Manipur",
+        "Mizoram",
+        "Odisha",
+        "Punjab",
+        "Tamil Nadu",
+        "Telangana",
+        "Tripura",
+        "Uttar Pradesh",
+        "Uttarakhand",
+        "West Bengal"
+      ],
+      "mp_status": "marginal",
+      "mp_notes": "TRAFFIC/TSA-India (2023) do NOT list Madhya Pradesh, though they list adjoining Chhattisgarh and Maharashtra. Treated as MARGINAL pending a verified MP voucher, despite frequent local reports from tiger reserves.",
+      "key_character": "Three low but distinct longitudinal keels on a dark brown to black carapace, with yellow to orange spots or short irregular streaks scattered on the head. Moderately domed, terrestrial habits.",
+      "diagnostics": [
+        "Three longitudinal carapace keels (hence 'trijuga'), best seen from behind or in oblique light",
+        "Carapace dark brown to black; scute margins sometimes paler",
+        "Head dark with yellow, orange or reddish irregular spots and blotches, not clean long stripes",
+        "Plastron dark brown to black, often with paler seams",
+        "Frequently found on land — forest paths, roadsides, kitchen gardens"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "melanochelys_tricarinata",
+          "discriminator": "M. tricarinata has three sharp, prominent, often pale-topped keels and a plain yellow or pinkish plastron without dark blotching; it is a terai/NE species absent from most of MP."
+        },
+        {
+          "species_id": "hardella_thurjii",
+          "discriminator": "Hardella has bold clean yellow head stripes and is a large-river species; trijuga has head spots and prefers tanks and forest wetlands."
+        },
+        {
+          "species_id": "indotestudo_elongata",
+          "discriminator": "Tortoise vs. turtle: I. elongata has elephantine, club-shaped hindlimbs and a high domed pale carapace; M. trijuga has webbed feet with claws and a flatter dark shell."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Das, I. (1995). Turtles and Tortoises of India. WWF-India / Oxford University Press."
+        },
+        {
+          "citation": "Vasudevan, K. et al. (2020). Melanochelys trijuga. IUCN Red List."
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "melanochelys_tricarinata",
+      "scientific_name": "Melanochelys tricarinata",
+      "authority": "(Blyth, 1856)",
+      "family": "Geoemydidae",
+      "common_en": "Tricarinate Hill Turtle",
+      "common_hi": "तीन कील वाला पहाड़ी कछुआ",
+      "iucn": {
+        "status": "EN",
+        "year": 2019,
+        "note": "Endangered."
+      },
+      "cites": "Appendix I",
+      "wpa_2022": "Schedule I",
+      "max_scl_mm": 175,
+      "habitat": "Moist deciduous and sal forest floor, terai grasslands. Almost entirely terrestrial.",
+      "distribution_states": [
+        "Arunachal Pradesh",
+        "Assam",
+        "Bihar",
+        "Chhattisgarh",
+        "Jharkhand",
+        "Manipur",
+        "Mizoram",
+        "Odisha",
+        "Uttar Pradesh",
+        "Uttarakhand",
+        "West Bengal"
+      ],
+      "mp_status": "absent",
+      "mp_notes": "Not reliably recorded from Madhya Pradesh. A specimen resembling this in MP is far more likely a juvenile M. trijuga — verify before recording a range extension.",
+      "key_character": "Three sharp, high, pale-crested keels on a small dark carapace, combined with a plain yellow to pinkish unmarked plastron. Fully terrestrial.",
+      "diagnostics": [
+        "Three prominent, sharply raised keels, each often topped with a pale yellow or cream line",
+        "Carapace dark brown, small (under 180 mm)",
+        "Plastron uniform yellow to pinkish-cream, WITHOUT dark blotches",
+        "Digits only half webbed; outer surface of the forelimbs with enlarged scales",
+        "Head with a fine pale line from the snout over the crown",
+        "Terrestrial — found walking on forest floor, not in water"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "melanochelys_trijuga",
+          "discriminator": "Plastron is decisive: plain pale in tricarinata, dark in trijuga. Keels are also sharper and pale-crested in tricarinata."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Ahmed, M.F. & Das, I. (2010). Turtles and Tortoises of Northeast India. Aaranyak."
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "geoclemys_hamiltonii",
+      "scientific_name": "Geoclemys hamiltonii",
+      "authority": "(Gray, 1831)",
+      "family": "Geoemydidae",
+      "common_en": "Spotted Pond Turtle",
+      "common_hi": "चित्तीदार तालाब कछुआ",
+      "iucn": {
+        "status": "EN",
+        "year": 2019,
+        "note": "Endangered; a major target of the international pet trade."
+      },
+      "cites": "Appendix I",
+      "wpa_2022": "Schedule I",
+      "max_scl_mm": 400,
+      "habitat": "Shallow, weedy oxbow lakes, marshes and slow river backwaters of the Ganga and Indus plains. Molluscivorous.",
+      "distribution_states": [
+        "Arunachal Pradesh",
+        "Assam",
+        "Bihar",
+        "Haryana",
+        "Himachal Pradesh",
+        "Jharkhand",
+        "Madhya Pradesh",
+        "Meghalaya",
+        "Punjab",
+        "Rajasthan",
+        "Uttar Pradesh",
+        "Uttarakhand",
+        "West Bengal"
+      ],
+      "mp_status": "marginal",
+      "mp_notes": "Northern MP fringe only. Frequently intercepted in pet-trade consignments moving through MP — seizure records are more likely than wild records.",
+      "key_character": "Jet-black shell and skin covered in bold, sharply defined white to pale-yellow spots and radiating streaks. Three strong knobbed keels. Nothing else in India looks like it.",
+      "diagnostics": [
+        "Carapace black with brilliant white or cream radiating streaks and spots on every scute",
+        "Three prominent keels, each bearing a series of knobs",
+        "Head, neck and limbs black with heavy white to yellow spotting",
+        "Head large and broad with powerful jaws (snail-crushing)",
+        "Posterior carapace margin strongly serrated"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "melanochelys_trijuga",
+          "discriminator": "M. trijuga is plain dark with head spots only; it never has the bold white radiating shell streaks or the knobbed keels of G. hamiltonii."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Das, I. (1995). Turtles and Tortoises of India. WWF-India / Oxford University Press."
+        },
+        {
+          "citation": "Rhodin, A.G.J. et al. (2021). Turtles of the World, 9th Ed.",
+          "url": "https://iucn-tftsg.org/checklist/"
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "morenia_petersi",
+      "scientific_name": "Morenia petersi",
+      "authority": "(Anderson, 1879)",
+      "family": "Geoemydidae",
+      "common_en": "Indian Eyed Turtle",
+      "common_hi": "आँखदार कछुआ",
+      "iucn": {
+        "status": "EN",
+        "year": 2019,
+        "note": "Endangered."
+      },
+      "cites": "Appendix II",
+      "wpa_2022": "Schedule I",
+      "max_scl_mm": 222,
+      "habitat": "Shallow weedy ponds, marshes and floodplain wetlands. Herbivorous.",
+      "distribution_states": [
+        "Arunachal Pradesh",
+        "Assam",
+        "Bihar",
+        "Meghalaya",
+        "Odisha",
+        "Uttar Pradesh",
+        "Uttarakhand",
+        "West Bengal"
+      ],
+      "mp_status": "absent",
+      "mp_notes": "Not present in Madhya Pradesh.",
+      "key_character": "Small greenish-brown turtle with pale-centred, dark-ringed 'eye' markings on the vertebral and pleural scutes and fine yellow lines running along the head and neck.",
+      "diagnostics": [
+        "Carapace olive-green to brown; scutes with concentric pale and dark rings giving an ocellate 'eye' appearance",
+        "Head olive with three yellow stripes on each side; limbs with yellow margins",
+        "Plastron yellow to orange with black blotches on the axillary scutes",
+        "Low vertebral keel; plastron yellow, often plain",
+        "Small — under 225 mm"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "hardella_thurjii",
+          "discriminator": "Hardella's yellow head stripes are broad and bold; Morenia's are fine and numerous. Hardella females are three times the size."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Ahmed, M.F. & Das, I. (2010). Turtles and Tortoises of Northeast India. Aaranyak."
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "cuora_amboinensis",
+      "scientific_name": "Cuora amboinensis",
+      "authority": "(Daudin, 1801)",
+      "family": "Geoemydidae",
+      "common_en": "Southeast Asian Box Turtle",
+      "common_hi": "डिब्बा कछुआ",
+      "iucn": {
+        "status": "EN",
+        "year": 2019,
+        "note": "Endangered."
+      },
+      "cites": "Appendix II",
+      "wpa_2022": "Schedule I",
+      "max_scl_mm": 250,
+      "habitat": "Shallow, heavily vegetated wetlands, paddy fields and forest pools of Northeast India.",
+      "distribution_states": [
+        "Andaman & Nicobar Islands",
+        "Arunachal Pradesh",
+        "Assam",
+        "Manipur",
+        "Meghalaya",
+        "Mizoram",
+        "Nagaland",
+        "Tripura",
+        "West Bengal"
+      ],
+      "mp_status": "absent",
+      "mp_notes": "Not present in Madhya Pradesh. Common in international pet-trade seizures — an MP record almost certainly indicates trade.",
+      "key_character": "Hinged plastron that closes completely against the carapace, sealing the animal in a box. Head with three bold yellow stripes on each side against black.",
+      "diagnostics": [
+        "Plastron hinged across the middle and able to close tightly — the box character",
+        "Carapace high-domed, smooth, dark olive to black with a low keel",
+        "Head black with three clean yellow stripes per side (one over the crown, one through the eye, one along the jaw)",
+        "Northeast India and Andamans only"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "cuora_mouhotii",
+          "discriminator": "C. mouhotii has a flattened carapace with three strong keels and a strongly serrated rear margin, and its plastral hinge is poorly developed."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Ahmed, M.F. & Das, I. (2010). Turtles and Tortoises of Northeast India. Aaranyak."
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "cuora_mouhotii",
+      "scientific_name": "Cuora mouhotii",
+      "authority": "(Gray, 1862)",
+      "family": "Geoemydidae",
+      "common_en": "Keeled Box Turtle",
+      "common_hi": "कीलदार डिब्बा कछुआ",
+      "iucn": {
+        "status": "EN",
+        "year": 2019,
+        "note": "Endangered."
+      },
+      "cites": "Appendix II",
+      "wpa_2022": "Schedule I",
+      "max_scl_mm": 180,
+      "habitat": "Leaf litter of moist evergreen hill forest.",
+      "distribution_states": [
+        "Arunachal Pradesh",
+        "Assam",
+        "Manipur",
+        "Meghalaya",
+        "Mizoram",
+        "Nagaland",
+        "Tripura"
+      ],
+      "mp_status": "absent",
+      "mp_notes": "Not present in Madhya Pradesh.",
+      "key_character": "Flat-topped brown carapace with three strong keels and a heavily saw-toothed posterior margin; plastral hinge present but weak. Terrestrial hill-forest species.",
+      "diagnostics": [
+        "Carapace distinctly flattened on top with three prominent keels",
+        "Posterior marginals strongly serrated — saw-toothed",
+        "Plastron with a weak, barely functional hinge",
+        "Small, terrestrial, Northeast hill forests"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "cuora_amboinensis",
+          "discriminator": "C. amboinensis is high-domed and smooth with a fully closing hinge and bold yellow head stripes."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Ahmed, M.F. & Das, I. (2010). Turtles and Tortoises of Northeast India. Aaranyak."
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "cyclemys_gemeli",
+      "scientific_name": "Cyclemys gemeli",
+      "authority": "Fritz et al., 2008",
+      "family": "Geoemydidae",
+      "common_en": "Assam Leaf Turtle",
+      "common_hi": "असम पत्ती कछुआ",
+      "iucn": {
+        "status": "NT",
+        "year": 2020,
+        "note": "Near Threatened."
+      },
+      "cites": "Appendix II",
+      "wpa_2022": "Schedule II",
+      "max_scl_mm": 240,
+      "habitat": "Hill streams and adjacent forest of the eastern Himalaya foothills and Northeast India.",
+      "distribution_states": [
+        "Arunachal Pradesh",
+        "Assam",
+        "Manipur",
+        "Meghalaya",
+        "Mizoram",
+        "Nagaland",
+        "Sikkim",
+        "Tripura",
+        "West Bengal"
+      ],
+      "mp_status": "absent",
+      "mp_notes": "Not present in Madhya Pradesh.",
+      "key_character": "Flattened, leaf-shaped brown carapace with a serrated rear margin and a plastron bearing dark radiating lines on a pale ground; a hinge develops in adults.",
+      "diagnostics": [
+        "Carapace flattened, oval, brown, with a moderate keel and serrated posterior margin",
+        "A vertebral keel plus two lateral keels; dark radiating lines on each scute",
+        "Plastron pale with fine dark radiating streaks from the scute centres",
+        "Ligamentous plastral hinge develops in adults",
+        "Head with fine dark stripes; Northeast India only"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "cuora_mouhotii",
+          "discriminator": "C. mouhotii has three strong keels and a much heavier serration; Cyclemys is flatter with radiating plastral lines."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Fritz, U. et al. (2008). Molecular phylogeny of Cyclemys. Zoologica Scripta."
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "vijayachelys_silvatica",
+      "scientific_name": "Vijayachelys silvatica",
+      "authority": "(Henderson, 1912)",
+      "family": "Geoemydidae",
+      "common_en": "Cochin Forest Cane Turtle",
+      "common_hi": "वन कछुआ",
+      "iucn": {
+        "status": "EN",
+        "year": 2019,
+        "note": "Endangered; Western Ghats endemic."
+      },
+      "cites": "Appendix II",
+      "wpa_2022": "Schedule I",
+      "max_scl_mm": 130,
+      "habitat": "Leaf litter of evergreen and semi-evergreen forest and bamboo/cane brakes in the Western Ghats.",
+      "distribution_states": [
+        "Karnataka",
+        "Kerala",
+        "Tamil Nadu"
+      ],
+      "mp_status": "absent",
+      "mp_notes": "Not present in Madhya Pradesh.",
+      "key_character": "Tiny terrestrial forest turtle, under 130 mm, with a reddish-brown to chestnut carapace and, in breeding males, a bright red flush on the head. Western Ghats endemic.",
+      "diagnostics": [
+        "Very small — the smallest Indian chelonian",
+        "Carapace reddish or chestnut brown, smooth, with a very low keel",
+        "Head large relative to the body; adult males with a scarlet iris and yellow to orange mandibles",
+        "Male head with red or pink suffusion in the breeding season",
+        "Strictly terrestrial in Western Ghats rainforest leaf litter"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "melanochelys_trijuga",
+          "discriminator": "M. trijuga is much larger and darker with three keels; V. silvatica is tiny and chestnut."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Praschag, P. et al. (2006). Vijayachelys, a new genus for Heosemys silvatica. Salamandra."
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "indotestudo_elongata",
+      "scientific_name": "Indotestudo elongata",
+      "authority": "(Blyth, 1854)",
+      "family": "Testudinidae",
+      "common_en": "Elongated Tortoise",
+      "common_hi": "लम्बा कछुआ / पहाड़ी कछुआ",
+      "iucn": {
+        "status": "CR",
+        "year": 2018,
+        "note": "Critically Endangered — uplisted from Endangered on evidence of severe range-wide decline."
+      },
+      "cites": "Appendix II",
+      "wpa_2022": "Schedule I",
+      "max_scl_mm": 360,
+      "habitat": "Dry and moist deciduous forest, sal and teak forest, bamboo. Terrestrial; most active in monsoon.",
+      "distribution_states": [
+        "Andhra Pradesh",
+        "Assam",
+        "Bihar",
+        "Chhattisgarh",
+        "Jharkhand",
+        "Madhya Pradesh",
+        "Manipur",
+        "Meghalaya",
+        "Mizoram",
+        "Odisha",
+        "Tripura",
+        "Uttar Pradesh",
+        "Uttarakhand",
+        "West Bengal"
+      ],
+      "mp_status": "marginal",
+      "mp_notes": "TRAFFIC/TSA-India (2023) do NOT list Madhya Pradesh for this species. Occurrence in the Satpura-Maikal and Kanha-Bandhavgarh belt is reported locally but is not corroborated by the national enforcement reference. Treated as MARGINAL here pending a verified voucher. Any MP record should be photographed and reported to TSA-India.",
+      "key_character": "Elongate (not round), rather low-domed pale yellowish to olive carapace, each scute usually with an irregular dark blotch at its centre. A distinct nuchal scute is present. Nostrils flush pink in breeding animals.",
+      "diagnostics": [
+        "Carapace elongate-oval rather than circular, moderately domed, pale yellow-olive to buff",
+        "Each scute typically with a dark irregular central blotch — never a symmetrical radiating star",
+        "Nuchal scute present (small scute at the front midline of the carapace above the neck)",
+        "Head pale yellow; in breeding condition the nostrils and eye region flush pink",
+        "Limbs columnar and club-like; hindlimb elephantine — a tortoise, not a turtle",
+        "Supracaudal scute single and usually incurved in males"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "geochelone_elegans",
+          "discriminator": "G. elegans has a strongly domed, humped shell with a symmetrical radiating yellow star pattern on each scute and NO nuchal scute. If you can see a clean star burst, it is elegans."
+        },
+        {
+          "species_id": "indotestudo_travancorica",
+          "discriminator": "I. travancorica is a Western Ghats endemic, generally darker and more uniformly brown; ranges do not overlap."
+        },
+        {
+          "species_id": "melanochelys_trijuga",
+          "discriminator": "M. trijuga is an aquatic/semi-terrestrial turtle with webbed clawed feet and a dark three-keeled shell; I. elongata has columnar elephantine feet."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Ihlow, F. et al. (2016). Indotestudo elongata. Chelonian Research Monographs 5:096.",
+          "url": "https://iucn-tftsg.org/cbftt/"
+        },
+        {
+          "citation": "Rahman, S.C. et al. (2019). Indotestudo elongata. IUCN Red List assessment."
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "geochelone_elegans",
+      "scientific_name": "Geochelone elegans",
+      "authority": "(Schoepff, 1795)",
+      "family": "Testudinidae",
+      "common_en": "Indian Star Tortoise",
+      "common_hi": "तारा कछुआ",
+      "iucn": {
+        "status": "VU",
+        "year": 2016,
+        "note": "Vulnerable; transferred to CITES Appendix I in 2019 on the strength of Indian trade seizure data."
+      },
+      "cites": "Appendix I",
+      "wpa_2022": "Schedule I",
+      "max_scl_mm": 380,
+      "habitat": "Dry scrub, thorn forest, semi-arid grassland and agricultural margins.",
+      "distribution_states": [
+        "Andhra Pradesh",
+        "Chhattisgarh",
+        "Gujarat",
+        "Karnataka",
+        "Kerala",
+        "Madhya Pradesh",
+        "Maharashtra",
+        "Odisha",
+        "Rajasthan",
+        "Tamil Nadu",
+        "Telangana"
+      ],
+      "mp_status": "marginal",
+      "mp_notes": "Western and southwestern MP scrub only — not a tiger-reserve forest species. India's single most trafficked tortoise; MP consignment seizures are common and usually involve animals sourced from Gujarat, Andhra or Karnataka.",
+      "key_character": "Symmetrical yellow radiating star pattern bursting from the centre of every carapace scute, on a highly domed shell with pronounced pyramidal humps. NO nuchal scute.",
+      "diagnostics": [
+        "Each scute with a symmetrical burst of pale yellow rays radiating from a raised centre",
+        "Carapace strongly domed with distinctly pyramided (humped) scutes",
+        "Nuchal scute ABSENT — check the front midline above the neck",
+        "Plastron also patterned with dark radiating streaks",
+        "Females markedly larger than males"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "indotestudo_elongata",
+          "discriminator": "Nuchal scute present in elongata, absent in elegans. Pattern is blotchy and irregular in elongata, symmetrically radiating in elegans. Shell elongate and low in elongata, domed and pyramided in elegans."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Choudhury, B.C. et al. (2019). Geochelone elegans. IUCN Red List."
+        },
+        {
+          "citation": "D'Cruze, N. et al. (2015). Star attraction: the illegal trade in Indian Star Tortoises. Nature Conservation 13:1–19."
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "indotestudo_travancorica",
+      "scientific_name": "Indotestudo travancorica",
+      "authority": "(Boulenger, 1907)",
+      "family": "Testudinidae",
+      "common_en": "Travancore Tortoise",
+      "common_hi": "ट्रावणकोर कछुआ",
+      "iucn": {
+        "status": "VU",
+        "year": 2019,
+        "note": "Vulnerable; Western Ghats endemic."
+      },
+      "cites": "Appendix II",
+      "wpa_2022": "Schedule I",
+      "max_scl_mm": 330,
+      "habitat": "Moist deciduous and evergreen forest of the Western Ghats.",
+      "distribution_states": [
+        "Karnataka",
+        "Kerala",
+        "Tamil Nadu"
+      ],
+      "mp_status": "absent",
+      "mp_notes": "Not present in Madhya Pradesh.",
+      "key_character": "Western Ghats endemic tortoise, generally darker and more uniformly olive-brown than I. elongata, with a nuchal scute present.",
+      "diagnostics": [
+        "Carapace elongate, olive to dark brown, blotching often diffuse",
+        "Nuchal scute present",
+        "Restricted to the Western Ghats — geography is the primary character"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "indotestudo_elongata",
+          "discriminator": "Separated by range: elongata is central, eastern and northeastern India; travancorica is Western Ghats only."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Rhodin, A.G.J. et al. (2021). Turtles of the World, 9th Ed.",
+          "url": "https://iucn-tftsg.org/checklist/"
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "manouria_emys",
+      "scientific_name": "Manouria emys",
+      "authority": "(Schlegel & Müller, 1844)",
+      "family": "Testudinidae",
+      "common_en": "Asian Giant Tortoise",
+      "common_hi": "एशियाई विशाल कछुआ",
+      "iucn": {
+        "status": "CR",
+        "year": 2018,
+        "note": "Critically Endangered."
+      },
+      "cites": "Appendix II",
+      "wpa_2022": "Schedule I",
+      "max_scl_mm": 600,
+      "habitat": "Moist evergreen hill forest of Northeast India. Builds a nest mound of leaf litter — unique among tortoises.",
+      "distribution_states": [
+        "Arunachal Pradesh",
+        "Assam",
+        "Manipur",
+        "Meghalaya",
+        "Mizoram",
+        "Nagaland",
+        "Tripura"
+      ],
+      "mp_status": "absent",
+      "mp_notes": "Not present in Madhya Pradesh.",
+      "key_character": "Very large dark brown to black tortoise with two enlarged tubercles on each thigh and a divided supracaudal scute. Northeast India only.",
+      "diagnostics": [
+        "Very large — to 600 mm and over 30 kg",
+        "Carapace dark brown to black, low-domed, scutes often with growth rings",
+        "Two prominent enlarged tubercles on the back of each thigh",
+        "Forelimbs with large overlapping scales; tail ending in a horny scale",
+        "Supracaudal scute divided",
+        "Northeast India evergreen forest"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "indotestudo_elongata",
+          "discriminator": "I. elongata is much smaller, pale yellowish, and lacks thigh tubercles."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Ahmed, M.F. & Das, I. (2010). Turtles and Tortoises of Northeast India. Aaranyak."
+        },
+        {
+          "citation": "Singh, S., Badola, S. & Fernandes, M. (2023). Identification Cards: Tortoises and Freshwater Turtles of India. TRAFFIC India Office / TSA-India / WWF-India.",
+          "url": "https://www.trafficindia.org/"
+        }
+      ]
+    },
+    {
+      "id": "manouria_impressa",
+      "scientific_name": "Manouria impressa",
+      "authority": "(Günther, 1882)",
+      "family": "Testudinidae",
+      "common_en": "Impressed Tortoise",
+      "common_hi": "दबा हुआ कछुआ",
+      "iucn": {
+        "status": "VU",
+        "year": 2018,
+        "note": "Vulnerable; marginal in India."
+      },
+      "cites": "Appendix II",
+      "wpa_2022": "Schedule I",
+      "max_scl_mm": 310,
+      "habitat": "Montane evergreen forest, generally above 700 m.",
+      "distribution_states": [
+        "Mizoram",
+        "Manipur",
+        "Nagaland",
+        "Arunachal Pradesh"
+      ],
+      "mp_status": "absent",
+      "mp_notes": "Not present in Madhya Pradesh.",
+      "key_character": "Flattened, concave ('impressed') scute centres on a yellowish-brown carapace with strongly serrated front and rear margins. Northeast hill forest.",
+      "diagnostics": [
+        "Scute centres concave or dished rather than raised",
+        "Carapace flattened dorsally, yellow-brown with dark radiating streaks",
+        "Anterior and posterior marginals strongly serrated and flared",
+        "Montane Northeast India only"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "manouria_emys",
+          "discriminator": "M. emys is much larger, darker and has convex scutes with thigh tubercles."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Rhodin, A.G.J. et al. (2021). Turtles of the World, 9th Ed.",
+          "url": "https://iucn-tftsg.org/checklist/"
+        }
+      ]
+    },
+    {
+      "id": "trachemys_scripta_elegans",
+      "scientific_name": "Trachemys scripta elegans",
+      "authority": "(Wied-Neuwied, 1839)",
+      "family": "Emydidae",
+      "common_en": "Red-eared Slider (EXOTIC / INVASIVE)",
+      "common_hi": "लाल कान वाला कछुआ",
+      "iucn": {
+        "status": "LC",
+        "year": 2011,
+        "note": "Least Concern in its native North American range. Listed among the world's 100 worst invasive alien species."
+      },
+      "cites": "Appendix II",
+      "wpa_2022": "Not a Schedule I/II native species. Exotic; CITES-listed species fall under Schedule IV. Section 62A (invasive alien species) may apply.",
+      "max_scl_mm": 290,
+      "habitat": "Released or escaped from the aquarium trade into urban tanks, temple ponds, lakes and reservoirs across India.",
+      "distribution_states": [
+        "Delhi",
+        "Uttar Pradesh",
+        "Maharashtra",
+        "Karnataka",
+        "Tamil Nadu",
+        "West Bengal",
+        "Kerala",
+        "Madhya Pradesh",
+        "Gujarat",
+        "Telangana"
+      ],
+      "mp_status": "introduced",
+      "mp_notes": "Established or repeatedly released in urban waterbodies in Bhopal, Indore and Jabalpur. INCLUDED IN THIS TOOL DELIBERATELY — misidentifying a slider as a native Schedule I species (or the reverse) is the single commonest identification error in Indian enforcement casework.",
+      "key_character": "Broad red to orange patch immediately behind each eye on an otherwise green-and-yellow finely striped head and neck. Carapace green in juveniles, darkening with age; posterior marginals serrated; plastron yellow with a large dark blotch on each scute.",
+      "diagnostics": [
+        "Bold red or orange postorbital patch — present even in hatchlings (may fade or blacken in very old males)",
+        "Head, neck and limbs with numerous fine yellow-green longitudinal stripes",
+        "Carapace bright green in juveniles with yellow concentric markings; olive-brown to near-black in old adults",
+        "Plastron yellow with one large dark smudge or eyespot per scute",
+        "Posterior carapace margin serrated; a distinct notch at the front of the upper jaw"
+      ],
+      "confusion_with": [
+        {
+          "species_id": "pangshura_tecta",
+          "discriminator": "P. tecta has a raised spined vertebral keel and a red head arrow ON THE CROWN, not a discrete patch behind the eye. Slider heads are striped; tecta heads are not finely striped."
+        },
+        {
+          "species_id": "morenia_petersi",
+          "discriminator": "Morenia has fine yellow head lines but no red ear patch and no serrated rear margin."
+        }
+      ],
+      "references": [
+        {
+          "citation": "Pragatheesh, A. et al. (2021). Exotic reptiles in the Indian pet trade. Journal of Threatened Taxa.",
+          "url": "https://threatenedtaxa.org/"
+        },
+        {
+          "citation": "Lowe, S. et al. (2000). 100 of the World's Worst Invasive Alien Species. IUCN ISSG."
+        }
+      ]
+    }
+  ]
+}

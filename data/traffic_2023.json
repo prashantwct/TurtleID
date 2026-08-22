@@ -1,0 +1,516 @@
+{
+  "source": {
+    "title": "Identification Cards: Tortoises and Freshwater Turtles of India",
+    "authors": "Singh, S. (TSA-India); Badola, S. & Fernandes, M. (TRAFFIC India)",
+    "publisher": "TRAFFIC India Office / TSA-India / WWF-India",
+    "year": 2023,
+    "note": "Enforcement reference issued to Indian wildlife law enforcement agencies. Values below are transcribed status codes and state lists (factual data). Diagnostic text is NOT reproduced — this publication is copyright TSA-India/TRAFFIC and reproduction requires publisher permission. Characters in species_db.json are written independently and cite this work as a source.",
+    "contact": "trafficind@wwfindia.net"
+  },
+  "taxa": {
+    "amyda_ornata": {
+      "iucn": "VU",
+      "cites": "Appendix II",
+      "wpa": "Schedule I",
+      "states": [
+        "Mizoram",
+        "Tripura"
+      ],
+      "note": "as Amyda cartilaginea"
+    },
+    "chitra_indica": {
+      "iucn": "EN",
+      "cites": "Appendix II",
+      "wpa": "Schedule I",
+      "states": [
+        "Andhra Pradesh",
+        "Assam",
+        "Bihar",
+        "Chhattisgarh",
+        "Gujarat",
+        "Haryana",
+        "Himachal Pradesh",
+        "Jharkhand",
+        "Karnataka",
+        "Madhya Pradesh",
+        "Maharashtra",
+        "Odisha",
+        "Punjab",
+        "Rajasthan",
+        "Uttarakhand",
+        "Uttar Pradesh",
+        "Tamil Nadu",
+        "Telangana",
+        "West Bengal"
+      ],
+      "note": ""
+    },
+    "nilssonia_gangetica": {
+      "iucn": "VU",
+      "cites": "Appendix I",
+      "wpa": "Schedule I",
+      "states": [
+        "Assam",
+        "Bihar",
+        "Chhattisgarh",
+        "Gujarat",
+        "Haryana",
+        "Himachal Pradesh",
+        "Jharkhand",
+        "Madhya Pradesh",
+        "Meghalaya",
+        "Odisha",
+        "Punjab",
+        "Rajasthan",
+        "Uttar Pradesh",
+        "Uttarakhand",
+        "West Bengal"
+      ],
+      "note": ""
+    },
+    "nilssonia_hurum": {
+      "iucn": "VU",
+      "cites": "Appendix I",
+      "wpa": "Schedule I",
+      "states": [
+        "Assam",
+        "Bihar",
+        "Jharkhand",
+        "Madhya Pradesh",
+        "Maharashtra",
+        "Manipur",
+        "Meghalaya",
+        "Mizoram",
+        "Odisha",
+        "Rajasthan",
+        "Tripura",
+        "Uttarakhand",
+        "Uttar Pradesh",
+        "West Bengal"
+      ],
+      "note": ""
+    },
+    "nilssonia_leithii": {
+      "iucn": "VU",
+      "cites": "Appendix I",
+      "wpa": "Schedule I",
+      "states": [
+        "Andhra Pradesh",
+        "Chhattisgarh",
+        "Karnataka",
+        "Kerala",
+        "Madhya Pradesh",
+        "Maharashtra",
+        "Odisha",
+        "Tamil Nadu",
+        "Telangana"
+      ],
+      "note": ""
+    },
+    "nilssonia_nigricans": {
+      "iucn": "EW",
+      "cites": "Appendix I",
+      "wpa": "Schedule I",
+      "states": [
+        "Arunachal Pradesh",
+        "Assam",
+        "Meghalaya",
+        "Nagaland"
+      ],
+      "note": ""
+    },
+    "lissemys_punctata": {
+      "iucn": "LC",
+      "cites": "Appendix II",
+      "wpa": "Schedule I",
+      "states": [
+        "Assam",
+        "Andhra Pradesh",
+        "Bihar",
+        "Chhattisgarh",
+        "Goa",
+        "Gujarat",
+        "Haryana",
+        "Himachal Pradesh",
+        "Jharkhand",
+        "Karnataka",
+        "Kerala",
+        "Madhya Pradesh",
+        "Maharashtra",
+        "Punjab",
+        "Rajasthan",
+        "Tamil Nadu",
+        "Telangana",
+        "Uttarakhand",
+        "Uttar Pradesh",
+        "West Bengal"
+      ],
+      "note": "introduced Andamans"
+    },
+    "pelochelys_cantorii": {
+      "iucn": "EN",
+      "cites": "Appendix II",
+      "wpa": "Schedule I",
+      "states": [
+        "Kerala",
+        "Odisha",
+        "Tamil Nadu",
+        "West Bengal"
+      ],
+      "note": ""
+    },
+    "batagur_baska": {
+      "iucn": "CR",
+      "cites": "Appendix I",
+      "wpa": "Schedule I",
+      "states": [
+        "West Bengal",
+        "Odisha"
+      ],
+      "note": ""
+    },
+    "batagur_dhongoka": {
+      "iucn": "EN",
+      "cites": "Appendix II",
+      "wpa": "Schedule I",
+      "states": [
+        "Bihar",
+        "Chhattisgarh",
+        "Jharkhand",
+        "Madhya Pradesh",
+        "Uttar Pradesh",
+        "Rajasthan",
+        "West Bengal"
+      ],
+      "note": ""
+    },
+    "batagur_kachuga": {
+      "iucn": "CR",
+      "cites": "Appendix I",
+      "wpa": "Schedule I",
+      "states": [
+        "Assam",
+        "Bihar",
+        "Chhattisgarh",
+        "Haryana",
+        "Jharkhand",
+        "Madhya Pradesh",
+        "Rajasthan",
+        "Uttarakhand",
+        "Uttar Pradesh",
+        "West Bengal"
+      ],
+      "note": ""
+    },
+    "cuora_amboinensis": {
+      "iucn": "VU",
+      "cites": "Appendix II",
+      "wpa": "Schedule I",
+      "states": [
+        "Arunachal Pradesh",
+        "Assam",
+        "Manipur",
+        "Meghalaya",
+        "Mizoram",
+        "Nagaland",
+        "Andaman & Nicobar Islands",
+        "Tripura"
+      ],
+      "note": ""
+    },
+    "cuora_mouhotii": {
+      "iucn": "EN",
+      "cites": "Appendix II",
+      "wpa": "Schedule I",
+      "states": [
+        "Arunachal Pradesh",
+        "Assam",
+        "Manipur",
+        "Meghalaya",
+        "Mizoram",
+        "Nagaland",
+        "Tripura"
+      ],
+      "note": ""
+    },
+    "cyclemys_gemeli": {
+      "iucn": "NE",
+      "cites": "Appendix II",
+      "wpa": "Schedule II",
+      "states": [
+        "Arunachal Pradesh",
+        "Assam",
+        "Manipur",
+        "Meghalaya",
+        "Mizoram",
+        "Nagaland",
+        "Tripura",
+        "West Bengal"
+      ],
+      "note": ""
+    },
+    "geoclemys_hamiltonii": {
+      "iucn": "VU",
+      "cites": "Appendix I",
+      "wpa": "Schedule I",
+      "states": [
+        "Arunachal Pradesh",
+        "Assam",
+        "Bihar",
+        "Haryana",
+        "Himachal Pradesh",
+        "Jharkhand",
+        "Madhya Pradesh",
+        "Meghalaya",
+        "Punjab",
+        "Rajasthan",
+        "Uttarakhand",
+        "Uttar Pradesh",
+        "West Bengal"
+      ],
+      "note": "also Jammu & Kashmir"
+    },
+    "hardella_thurjii": {
+      "iucn": "VU",
+      "cites": "Appendix II",
+      "wpa": "Schedule I",
+      "states": [
+        "Assam",
+        "Bihar",
+        "Chhattisgarh",
+        "Jharkhand",
+        "Madhya Pradesh",
+        "Manipur",
+        "Meghalaya",
+        "Mizoram",
+        "Punjab",
+        "Rajasthan",
+        "Tripura",
+        "Uttar Pradesh",
+        "West Bengal"
+      ],
+      "note": ""
+    },
+    "melanochelys_tricarinata": {
+      "iucn": "VU",
+      "cites": "Appendix I",
+      "wpa": "Schedule I",
+      "states": [
+        "Arunachal Pradesh",
+        "Assam",
+        "Bihar",
+        "Jharkhand",
+        "Manipur",
+        "Mizoram",
+        "Uttarakhand",
+        "Uttar Pradesh",
+        "West Bengal"
+      ],
+      "note": ""
+    },
+    "melanochelys_trijuga": {
+      "iucn": "NT",
+      "cites": "Appendix II",
+      "wpa": "Schedule II",
+      "states": [
+        "Andhra Pradesh",
+        "Assam",
+        "Bihar",
+        "Chhattisgarh",
+        "Goa",
+        "Gujarat",
+        "Haryana",
+        "Karnataka",
+        "Kerala",
+        "Maharashtra",
+        "Manipur",
+        "Mizoram",
+        "Odisha",
+        "Punjab",
+        "Tamil Nadu",
+        "Telangana",
+        "Tripura",
+        "Uttarakhand",
+        "Uttar Pradesh",
+        "West Bengal"
+      ],
+      "note": ""
+    },
+    "morenia_petersi": {
+      "iucn": "VU",
+      "cites": "Appendix II",
+      "wpa": "Schedule I",
+      "states": [
+        "Arunachal Pradesh",
+        "Assam",
+        "Bihar",
+        "Meghalaya",
+        "Uttarakhand",
+        "Uttar Pradesh",
+        "West Bengal"
+      ],
+      "note": ""
+    },
+    "pangshura_smithii": {
+      "iucn": "NT",
+      "cites": "Appendix II",
+      "wpa": "Schedule II",
+      "states": [
+        "Arunachal Pradesh",
+        "Assam",
+        "Bihar",
+        "Haryana",
+        "Himachal Pradesh",
+        "Meghalaya",
+        "Nagaland",
+        "Punjab",
+        "Uttarakhand",
+        "Uttar Pradesh",
+        "West Bengal"
+      ],
+      "note": "also Jammu & Kashmir"
+    },
+    "pangshura_sylhetensis": {
+      "iucn": "EN",
+      "cites": "Appendix II",
+      "wpa": "Schedule I",
+      "states": [
+        "Arunachal Pradesh",
+        "Assam",
+        "Manipur",
+        "Meghalaya",
+        "Mizoram",
+        "Nagaland",
+        "West Bengal"
+      ],
+      "note": ""
+    },
+    "pangshura_tecta": {
+      "iucn": "LC",
+      "cites": "Appendix I",
+      "wpa": "Schedule I",
+      "states": [
+        "Arunachal Pradesh",
+        "Assam",
+        "Bihar",
+        "Chhattisgarh",
+        "Gujarat",
+        "Haryana",
+        "Himachal Pradesh",
+        "Jharkhand",
+        "Madhya Pradesh",
+        "Manipur",
+        "Meghalaya",
+        "Mizoram",
+        "Nagaland",
+        "Odisha",
+        "Punjab",
+        "Rajasthan",
+        "Tripura",
+        "Uttarakhand",
+        "Uttar Pradesh",
+        "West Bengal"
+      ],
+      "note": "also Jammu & Kashmir"
+    },
+    "pangshura_tentoria": {
+      "iucn": "LC",
+      "cites": "Appendix II",
+      "wpa": "Schedule I",
+      "states": [
+        "Andhra Pradesh",
+        "Arunachal Pradesh",
+        "Assam",
+        "Bihar",
+        "Chhattisgarh",
+        "Haryana",
+        "Karnataka",
+        "Madhya Pradesh",
+        "Maharashtra",
+        "Meghalaya",
+        "Odisha",
+        "Rajasthan",
+        "Telangana",
+        "Tripura",
+        "Uttar Pradesh",
+        "Uttarakhand",
+        "West Bengal"
+      ],
+      "note": ""
+    },
+    "vijayachelys_silvatica": {
+      "iucn": "EN",
+      "cites": "Appendix II",
+      "wpa": "Schedule I",
+      "states": [
+        "Karnataka",
+        "Kerala",
+        "Tamil Nadu"
+      ],
+      "note": ""
+    },
+    "geochelone_elegans": {
+      "iucn": "VU",
+      "cites": "Appendix I",
+      "wpa": "Schedule I",
+      "states": [
+        "Andhra Pradesh",
+        "Chhattisgarh",
+        "Gujarat",
+        "Karnataka",
+        "Kerala",
+        "Madhya Pradesh",
+        "Odisha",
+        "Rajasthan",
+        "Tamil Nadu",
+        "Telangana"
+      ],
+      "note": ""
+    },
+    "indotestudo_elongata": {
+      "iucn": "EN",
+      "cites": "Appendix II",
+      "wpa": "Schedule I",
+      "states": [
+        "Assam",
+        "Bihar",
+        "Jharkhand",
+        "Manipur",
+        "Meghalaya",
+        "Mizoram",
+        "Odisha",
+        "Tripura",
+        "Uttarakhand",
+        "Uttar Pradesh",
+        "West Bengal"
+      ],
+      "note": ""
+    },
+    "indotestudo_travancorica": {
+      "iucn": "VU",
+      "cites": "Appendix II",
+      "wpa": "Schedule I",
+      "states": [
+        "Karnataka",
+        "Kerala",
+        "Tamil Nadu"
+      ],
+      "note": ""
+    },
+    "manouria_emys": {
+      "iucn": "EN",
+      "cites": "Appendix II",
+      "wpa": "Schedule I",
+      "states": [
+        "Arunachal Pradesh",
+        "Assam",
+        "Manipur",
+        "Meghalaya",
+        "Mizoram",
+        "Nagaland",
+        "Tripura"
+      ],
+      "note": ""
+    }
+  }
+}

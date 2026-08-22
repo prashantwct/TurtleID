@@ -47,6 +47,23 @@ streamlit run app.py
 Python 3.10+. Runs on a field laptop without a GPU; inference on CPU is
 around 200 ms per image at 320 px.
 
+### Deploying on Streamlit Community Cloud
+
+Community Cloud chooses the interpreter, not the repository — the version is
+set per app under **Advanced settings → Python version**, and an app left on a
+version that falls out of support is moved forward without warning. That is a
+dependency problem, because numpy, pandas and pillow are compiled packages: a
+pin whose wheels predate the interpreter is built from source on the runner,
+and the runner has no zlib headers, so the deploy dies during
+`pip install` and the app never leaves "Your app is in the oven".
+
+`requirements.txt` therefore splits those three pins on `python_version`. Both
+branches install from wheels on 3.10 through 3.14. Pin a fourth package there
+only after checking a wheel exists for the Python the app is deployed on.
+
+If a deploy hangs, read the log from the top: the first compiled package that
+starts "Building wheel" is the failure, whatever error appears later.
+
 ---
 
 ## How a determination is produced
