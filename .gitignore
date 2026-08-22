@@ -1,0 +1,18 @@
+
+# Never commit field records or locality data
+*.jsonl
+*.pyc
+.DS_Store
+.env
+.venv/
+__pycache__/
+contributions/
+contributions/images/
+data/iucn_cache.json
+dataset/
+logs/
+models/*.pt
+models/calibration.json
+models/runs/
+negatives/
+records/

@@ -1,0 +1,823 @@
+"""
+Chelonid-ID — field identification tool for Indian turtles and tortoises.
+
+Run:  streamlit run app.py
+"""
+
+from __future__ import annotations
+
+import io
+import logging
+from pathlib import Path
+
+import streamlit as st
+
+from config import (
+    ALLOWED_SUFFIXES,
+    APP_LOG_FILE,
+    APP_VERSION,
+    INDIAN_STATES,
+    MAX_UPLOAD_BYTES,
+    STATE_CENTROIDS,
+    TFTSG_CHECKLIST,
+)
+from core.contributions import (
+    CONTRIBUTION_KINDS,
+    ContributionError,
+    image_coverage,
+    read_proposals,
+    scrub_free_text,
+    submit_image,
+    submit_proposal,
+    summarise,
+)
+from core.database import SpeciesDB, SpeciesDBError
+from core.iucn import IUCNClient, compare_with_local
+from core.inference import ChelonidIdentifier
+from core.morphkey import CHARACTERS, most_discriminating, run_key
+from core.records import image_fingerprint, log_determination, read_records
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[logging.FileHandler(APP_LOG_FILE), logging.StreamHandler()],
+)
+logger = logging.getLogger(__name__)
+
+st.set_page_config(page_title="Chelonid-ID", page_icon="🐢", layout="wide")
+
+TIER_STYLE = {
+    "CONFIRMED": ("✅", "success"),
+    "PROBABLE": ("🟡", "warning"),
+    "TENTATIVE": ("🟠", "warning"),
+    "INDETERMINATE": ("🔴", "error"),
+    "REJECTED": ("⛔", "error"),
+}
+
+IUCN_COLOUR = {
+    "CR": "#d81e05", "EN": "#fc7f3f", "VU": "#f9e814",
+    "NT": "#cce226", "LC": "#60c659", "DD": "#d1d1c6",
+    "EW": "#542344", "EX": "#000000", "NE": "#ffffff",
+}
+
+
+# ---------------------------------------------------------------- resources
+@st.cache_resource(show_spinner=False)
+def get_db() -> SpeciesDB:
+    return SpeciesDB.load()
+
+
+@st.cache_resource(show_spinner=False)
+def get_identifier(_db: SpeciesDB) -> ChelonidIdentifier:
+    return ChelonidIdentifier(_db)
+
+
+try:
+    DB = get_db()
+except SpeciesDBError as exc:
+    st.error(f"The species reference database failed validation.\n\n{exc}")
+    st.stop()
+
+IDENTIFIER = get_identifier(DB)
+
+
+@st.cache_resource(show_spinner=False)
+def get_iucn() -> IUCNClient:
+    return IUCNClient()
+
+
+IUCN = get_iucn()
+
+
+# ---------------------------------------------------------------- components
+def status_chip(species) -> None:
+    colour = IUCN_COLOUR.get(species.iucn_status, "#cccccc")
+    text = "#000" if species.iucn_status in {"VU", "NT", "LC", "DD", "NE"} else "#fff"
+    st.markdown(
+        f"""
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px 0;">
+          <span style="background:{colour};color:{text};padding:3px 11px;
+                border-radius:12px;font-size:0.8rem;font-weight:600;">
+            IUCN {species.iucn_status} — {species.iucn_label}
+          </span>
+          <span style="background:#1f4e5f;color:#fff;padding:3px 11px;
+                border-radius:12px;font-size:0.8rem;font-weight:600;">
+            WPA 2022: {species.wpa}
+          </span>
+          <span style="background:#4a4a4a;color:#fff;padding:3px 11px;
+                border-radius:12px;font-size:0.8rem;font-weight:600;">
+            CITES {species.cites}
+          </span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def distribution_map(species) -> None:
+    """Offline state-level presence map. No network call, no basemap tiles."""
+    try:
+        import plotly.graph_objects as go
+    except ImportError:
+        st.caption("Install plotly to see the distribution map.")
+        st.write("**Recorded from:** " + ", ".join(species.states))
+        return
+
+    present = [s for s in species.states if s in STATE_CENTROIDS]
+    others = [s for s in STATE_CENTROIDS if s not in present]
+
+    fig = go.Figure()
+    fig.add_trace(go.Scattergeo(
+        lon=[STATE_CENTROIDS[s][1] for s in others],
+        lat=[STATE_CENTROIDS[s][0] for s in others],
+        text=others, mode="markers", name="Not recorded",
+        marker=dict(size=6, color="#d9d9d9", line=dict(width=0.5, color="#999")),
+        hovertemplate="%{text}<extra>Not recorded</extra>",
+    ))
+    fig.add_trace(go.Scattergeo(
+        lon=[STATE_CENTROIDS[s][1] for s in present],
+        lat=[STATE_CENTROIDS[s][0] for s in present],
+        text=present, mode="markers", name="Recorded",
+        marker=dict(size=13, color="#1f77b4", opacity=0.82,
+                    line=dict(width=1, color="#0b3d5c")),
+        hovertemplate="%{text}<extra>Recorded</extra>",
+    ))
+    fig.update_geos(
+        scope="asia", center=dict(lat=22.5, lon=80),
+        lataxis_range=[5, 37], lonaxis_range=[67, 98],
+        showcountries=True, countrycolor="#8a8a8a",
+        showland=True, landcolor="#f7f7f5",
+        showocean=True, oceancolor="#e8f1f5", resolution=50,
+    )
+    fig.update_layout(
+        height=340, margin=dict(l=0, r=0, t=4, b=0),
+        legend=dict(orientation="h", y=-0.05),
+    )
+    st.plotly_chart(fig, use_container_width=True)
+    st.caption(
+        "State-level presence from the published sources cited below. Indicative "
+        "only — not a modelled range polygon, and not survey effort corrected. "
+        "Use the GBIF link for point occurrence data."
+    )
+
+
+def species_card(species, *, expanded_default: bool = True) -> None:
+    st.markdown(f"### *{species.scientific_name}* {species.authority}")
+    st.markdown(
+        f"**{species.common_en}**"
+        + (f" · {species.common_hi}" if species.common_hi else "")
+        + f" · {species.family}"
+    )
+    status_chip(species)
+
+    st.info(f"**Key character** — {species.key_character}")
+
+    left, right = st.columns([1, 1])
+
+    with left:
+        st.markdown("**Field characters**")
+        for d in species.diagnostics:
+            st.markdown(f"- {d}")
+
+        if species.habitat:
+            st.markdown("**Habitat**")
+            st.markdown(species.habitat)
+
+        if species.max_scl_mm:
+            st.markdown(f"**Maximum carapace length** — {species.max_scl_mm} mm")
+
+        if species.mp_notes:
+            st.markdown("**Madhya Pradesh**")
+            st.markdown(species.mp_notes)
+
+    with right:
+        distribution_map(species)
+
+    if species.confusion_with:
+        with st.expander("Species this is confused with", expanded=expanded_default):
+            for pair in species.confusion_with:
+                try:
+                    other = DB.get(pair["species_id"])
+                    st.markdown(f"**vs. *{other.scientific_name}*** ({other.common_en})")
+                except SpeciesDBError:
+                    st.markdown(f"**vs. {pair['species_id']}**")
+                st.markdown(f"> {pair['discriminator']}")
+
+    cached = IUCN.cached(species.scientific_name)
+    if cached:
+        verdict = compare_with_local(species.iucn_status, cached)
+        with st.expander(
+            f"IUCN Red List assessment "
+            f"({'agrees' if verdict['status'] == 'match' else 'DIVERGES'})",
+            expanded=(verdict["status"] == "divergent"),
+        ):
+            if verdict["status"] == "divergent":
+                st.warning(verdict["message"])
+            cols = st.columns(2)
+            with cols[0]:
+                if cached.get("population_trend"):
+                    st.markdown(f"**Population trend** — {cached['population_trend']}")
+                if cached.get("criteria"):
+                    st.markdown(f"**Criteria** — {cached['criteria']}")
+                if cached.get("threats"):
+                    st.markdown("**Threats**")
+                    for t in cached["threats"][:6]:
+                        st.markdown(f"- {t}")
+            with cols[1]:
+                if cached.get("use_and_trade"):
+                    st.markdown("**Use and trade**")
+                    for u in cached["use_and_trade"][:5]:
+                        st.markdown(f"- {u}")
+                if cached.get("history") and len(cached["history"]) > 1:
+                    trail = " -> ".join(
+                        f"{h['category']} ({h['year']})"
+                        for h in cached["history"] if h.get("category")
+                    )
+                    st.markdown(f"**Assessment history** — {trail}")
+            if cached.get("citation"):
+                st.caption(cached["citation"])
+
+    with st.expander("Sources"):
+        for ref in species.references:
+            if ref.get("url"):
+                st.markdown(f"- {ref['citation']} — [link]({ref['url']})")
+            else:
+                st.markdown(f"- {ref['citation']}")
+        st.markdown("**Look up online**")
+        for label, url in species.links.items():
+            st.markdown(f"- [{label}]({url})")
+        if species.iucn_note:
+            st.caption(
+                f"IUCN assessment note ({species.iucn_year}): {species.iucn_note}"
+            )
+
+
+def legal_footer() -> None:
+    basis = DB.legal_basis
+    st.warning(
+        f"**{basis.get('caution', '')}**\n\n"
+        f"Schedule source: {basis.get('wpa', '')}"
+    )
+
+
+# ---------------------------------------------------------------- tabs
+def tab_identify() -> None:
+    st.subheader("Photograph identification")
+
+    if not IDENTIFIER.available:
+        st.error(
+            "**No trained model is installed.** The identification pipeline needs "
+            "`models/chelonid_cls.pt`. Until it exists, use the **Morphological "
+            "key** tab — it is fully functional and does not depend on the model."
+        )
+        with st.expander("How to get a model in place"):
+            st.markdown(
+                "1. Collect and label images by species id (see README).\n"
+                "2. `python -m training.train_classifier --data ./dataset`\n"
+                "3. `python -m training.calibrate --data ./dataset "
+                "--negatives ./negatives`\n"
+                "4. Restart this app.\n\n"
+                "Step 3 is not optional. An uncalibrated model reports confident "
+                "numbers that are not confidence."
+            )
+        return
+
+    if not IDENTIFIER.calibrated:
+        st.warning(
+            "This model has not been calibrated. Percentages shown are upper "
+            "bounds and will be optimistic. Verify every determination against "
+            "the morphological key before recording it."
+        )
+
+    col_a, col_b = st.columns([2, 1])
+
+    with col_b:
+        state = st.selectbox(
+            "State where the animal was found",
+            ["— not recorded —"] + INDIAN_STATES,
+            index=INDIAN_STATES.index("Madhya Pradesh") + 1,
+            help=(
+                "Used as a weak geographic prior. An out-of-range species is "
+                "down-weighted but never ruled out — that pattern is what a "
+                "trade seizure looks like."
+            ),
+        )
+        state = None if state.startswith("—") else state
+        observer = st.text_input("Observer / beat", placeholder="e.g. RO, Churna range")
+        location_note = st.text_input(
+            "Location note", placeholder="e.g. Denwa river, near Madhai"
+        )
+
+    with col_a:
+        uploaded = st.file_uploader(
+            "Photograph",
+            type=[s.lstrip(".") for s in sorted(ALLOWED_SUFFIXES)],
+            help=(
+                "Best results: dorsal (carapace from directly above), ventral "
+                "(plastron), lateral profile, head close-up, with a scale."
+            ),
+        )
+
+    if uploaded is None:
+        with st.expander("Photograph capture protocol", expanded=True):
+            st.markdown(
+                "Five frames, in this order. Most failed identifications are "
+                "failed photographs.\n\n"
+                "1. **Dorsal** — carapace square-on from directly above, whole "
+                "shell in frame, no foreshortening.\n"
+                "2. **Ventral** — plastron flat, whole. This single frame "
+                "separates *Pangshura tecta* from *P. smithii*, and *P. smithii* "
+                "is Schedule II while *P. tecta* is Schedule I.\n"
+                "3. **Lateral profile** — eye-level from the side. This is the "
+                "only view that shows whether the third vertebral scute is "
+                "spined.\n"
+                "4. **Head close-up** — filling the frame, in shade, no flash. "
+                "Head markings carry more diagnostic weight than shell colour.\n"
+                "5. **Scale** — a ruler, or a 10-rupee coin, in the plane of the "
+                "carapace.\n\n"
+                "Shoot in even shade. Direct sun blows out the pale radiating "
+                "rays on a star tortoise and turns a coral plastron white."
+            )
+        return
+
+    raw = uploaded.getvalue()
+    if len(raw) > MAX_UPLOAD_BYTES:
+        st.error(
+            f"Image is {len(raw) / 1e6:.1f} MB; the limit is "
+            f"{MAX_UPLOAD_BYTES / 1e6:.0f} MB. Resize and try again."
+        )
+        return
+    if Path(uploaded.name).suffix.lower() not in ALLOWED_SUFFIXES:
+        st.error("Unsupported file type.")
+        return
+
+    try:
+        from PIL import Image, ImageOps
+        image = ImageOps.exif_transpose(Image.open(io.BytesIO(raw))).convert("RGB")
+    except Exception as exc:
+        logger.error("Could not decode upload: %s", exc)
+        st.error("That file could not be read as an image.")
+        return
+
+    st.image(image, caption=uploaded.name, width=380)
+
+    with st.spinner("Identifying..."):
+        try:
+            result = IDENTIFIER.identify(image, state=state)
+        except (FileNotFoundError, ImportError, ValueError) as exc:
+            st.error(f"Identification could not run: {exc}")
+            return
+        except Exception as exc:
+            logger.exception("Unexpected failure during identification")
+            st.error(
+                "Identification failed unexpectedly. The error has been logged. "
+                "Use the morphological key for this animal."
+            )
+            return
+
+    log_determination(
+        result.to_record(),
+        image_hash=image_fingerprint(raw),
+        observer=observer,
+        location_note=location_note,
+        method="model",
+    )
+
+    icon, level = TIER_STYLE.get(result.tier, ("", "info"))
+    getattr(st, level)(f"{icon} **{result.tier}** — {result.action}")
+
+    for w in result.warnings:
+        st.warning(w)
+
+    if not result.candidates:
+        return
+
+    top = result.candidates[0]
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Confidence", f"{result.confidence_pct}%")
+    m2.metric("Ambiguity (entropy)", f"{result.normalised_entropy:.2f}",
+              help="0 = decisive, 1 = no information. Above 0.55 forces a downgrade.")
+    m3.metric("Occurrence in state", top.occurrence.title())
+
+    st.markdown("#### Ranked candidates")
+    rows = []
+    for c in result.candidates:
+        rows.append({
+            "Species": c.scientific_name,
+            "Common name": c.common_en,
+            "Model": f"{100 * c.model_probability:.1f}%",
+            "Geography": f"×{c.geo_multiplier:.2f}",
+            "Final": f"{100 * c.posterior:.1f}%",
+            "Status in state": c.occurrence,
+        })
+    st.dataframe(rows, use_container_width=True, hide_index=True)
+
+    st.divider()
+    species_card(DB.get(top.species_id))
+
+    with st.expander("Audit trail for this determination"):
+        st.json(result.to_record())
+
+    legal_footer()
+
+
+def tab_key() -> None:
+    st.subheader("Morphological key")
+    st.markdown(
+        "Record whatever characters you can actually see, in any order. Leave "
+        "the rest blank. Taxa that contradict an observation are pushed down "
+        "but not deleted, because field characters get misread and a silent "
+        "elimination of the right answer is the worse failure."
+    )
+
+    observations: dict[str, str] = {}
+    cols = st.columns(2)
+    for i, (char, (question, states)) in enumerate(CHARACTERS.items()):
+        with cols[i % 2]:
+            labels = ["— not observed —"] + list(states.values())
+            picked = st.selectbox(question, labels, key=f"key_{char}")
+            if not picked.startswith("—"):
+                observations[char] = next(
+                    code for code, label in states.items() if label == picked
+                )
+
+    if not observations:
+        st.info("Select at least one character to begin.")
+        return
+
+    results = run_key(observations)
+    surviving = [r for r in results if not r.contradicted and r.total_scored > 0]
+
+    st.markdown(f"#### {len(surviving)} taxa consistent with {len(observations)} character(s)")
+
+    if not surviving:
+        st.error(
+            "No taxon matches every observation. One of the characters is "
+            "probably being read differently from the way the key defines it — "
+            "most often the keel count or the plastron colour under artificial "
+            "light. Clear the least certain character and try again. The closest "
+            "partial matches are listed below."
+        )
+        for r in results[:5]:
+            sp = DB.get(r.species_id)
+            st.markdown(
+                f"- *{sp.scientific_name}* ({sp.common_en}) — "
+                f"{r.matched}/{r.total_scored} characters matched"
+            )
+        return
+
+    if len(surviving) > 1:
+        nxt = most_discriminating(observations, [r.species_id for r in surviving])
+        if nxt:
+            st.info(
+                f"**Most useful character to check next:** "
+                f"{CHARACTERS[nxt][0]} — it splits the remaining candidates most evenly."
+            )
+
+    for r in surviving[:6]:
+        sp = DB.get(r.species_id)
+        badge = f"{r.matched}/{r.total_scored}"
+        with st.expander(
+            f"*{sp.scientific_name}* — {sp.common_en}  ·  {badge} characters  ·  "
+            f"{sp.iucn_status} · {sp.wpa}",
+            expanded=(len(surviving) == 1),
+        ):
+            species_card(sp, expanded_default=False)
+
+    if len(surviving) == 1:
+        sp = DB.get(surviving[0].species_id)
+        if st.button("Record this determination", type="primary"):
+            ok = log_determination(
+                {
+                    "tier": "KEY_DETERMINATION",
+                    "action": "Determined by morphological key",
+                    "candidates": [{
+                        "species_id": sp.id,
+                        "scientific_name": sp.scientific_name,
+                        "posterior": 1.0,
+                    }],
+                    "observations": observations,
+                },
+                method="morphological_key",
+            )
+            st.success("Recorded." if ok else "Determination shown but not logged.")
+
+    legal_footer()
+
+
+def tab_reference() -> None:
+    st.subheader("Species reference")
+
+    c1, c2, c3 = st.columns(3)
+    families = ["All"] + sorted({s.family for s in DB})
+    family = c1.selectbox("Family", families)
+    statuses = ["All"] + ["CR", "EN", "VU", "NT", "LC"]
+    status = c2.selectbox("IUCN status", statuses)
+    state = c3.selectbox("Occurs in state", ["All"] + INDIAN_STATES)
+
+    query = st.text_input("Search name", placeholder="scientific, English or Hindi name")
+
+    selection = list(DB)
+    if family != "All":
+        selection = [s for s in selection if s.family == family]
+    if status != "All":
+        selection = [s for s in selection if s.iucn_status == status]
+    if state != "All":
+        selection = [s for s in selection if s.occurs_in(state) != "absent"]
+    if query:
+        q = query.lower()
+        selection = [
+            s for s in selection
+            if q in s.scientific_name.lower()
+            or q in s.common_en.lower()
+            or q in s.common_hi
+        ]
+
+    st.caption(f"{len(selection)} of {len(DB)} taxa")
+    for sp in sorted(selection, key=lambda s: (s.family, s.scientific_name)):
+        with st.expander(
+            f"*{sp.scientific_name}* — {sp.common_en}  ·  {sp.iucn_status} · {sp.wpa}"
+        ):
+            species_card(sp, expanded_default=False)
+
+    legal_footer()
+
+
+def tab_records() -> None:
+    st.subheader("Determination log")
+    entries = read_records()
+    if not entries:
+        st.info("No determinations recorded yet.")
+        return
+
+    tiers: dict[str, int] = {}
+    for e in entries:
+        t = e.get("determination", {}).get("tier", "unknown")
+        tiers[t] = tiers.get(t, 0) + 1
+
+    cols = st.columns(len(tiers) or 1)
+    for col, (t, n) in zip(cols, sorted(tiers.items())):
+        col.metric(t, n)
+
+    st.markdown("#### Recent")
+    for e in reversed(entries[-25:]):
+        det = e.get("determination", {})
+        cands = det.get("candidates") or [{}]
+        name = cands[0].get("scientific_name", "—")
+        st.markdown(
+            f"`{e.get('timestamp_utc','')}` · **{det.get('tier','')}** · "
+            f"*{name}* · {e.get('observer','')} · {e.get('location_note','')}"
+        )
+
+    unresolved = [
+        e for e in entries
+        if e.get("determination", {}).get("tier") in {"INDETERMINATE", "REJECTED", "TENTATIVE"}
+    ]
+    if unresolved:
+        st.info(
+            f"**{len(unresolved)} unresolved determinations.** These are the "
+            "images worth labelling next — every one is a case the model could "
+            "not handle, which makes them worth more per image than another "
+            "hundred flapshells."
+        )
+
+    st.download_button(
+        "Download log (JSONL)",
+        data="\n".join(str(e) for e in entries),
+        file_name="chelonid_determinations.jsonl",
+        mime="application/json",
+    )
+
+
+def tab_contribute() -> None:
+    st.subheader("Contribute")
+    st.markdown(
+        "This tool is only as good as its reference data and its training "
+        "images. Both come from people in the field."
+    )
+    st.info(
+        "**Locality data is stripped on submission.** EXIF GPS is removed from "
+        "every photograph before it is written to disk, and coordinates typed "
+        "into a notes field are redacted. Nothing finer than a state is stored. "
+        "A coordinate for a *Batagur kachuga* nesting bank is a poaching risk, "
+        "and the model does not need one to learn."
+    )
+
+    what = st.radio(
+        "What are you contributing?",
+        list(CONTRIBUTION_KINDS),
+        format_func=lambda k: CONTRIBUTION_KINDS[k],
+        horizontal=False,
+    )
+    contributor = st.text_input(
+        "Your name and posting", placeholder="e.g. RO Churna range, STR"
+    )
+
+    if what == "image":
+        _contribute_image(contributor)
+    else:
+        _contribute_proposal(what, contributor)
+
+    st.divider()
+    counts = summarise()
+    if counts:
+        st.markdown("#### Contributions received")
+        cols = st.columns(len(counts))
+        for col, (kind, n) in zip(cols, sorted(counts.items())):
+            col.metric(CONTRIBUTION_KINDS.get(kind, kind), n)
+
+
+def _contribute_image(contributor: str) -> None:
+    coverage = image_coverage(DB.ids)
+    thin = sorted(
+        ((n, sid) for sid, n in coverage.items() if n < 30),
+        key=lambda x: x[0],
+    )[:8]
+    if thin:
+        st.markdown("**Most needed right now** (under 30 images each)")
+        st.markdown(
+            ", ".join(f"*{DB.get(sid).scientific_name}* ({n})" for n, sid in thin)
+        )
+
+    col_a, col_b = st.columns([2, 1])
+    with col_b:
+        known = st.radio("Do you know the species?", ["Yes", "No / unsure"])
+        species_id = None
+        certainty = "unidentified"
+        if known == "Yes":
+            options = sorted(DB.ids, key=lambda i: DB.get(i).scientific_name)
+            species_id = st.selectbox(
+                "Species", options,
+                format_func=lambda i: f"{DB.get(i).scientific_name} — {DB.get(i).common_en}",
+            )
+            certainty = st.select_slider(
+                "How certain?", ["possible", "probable", "confident", "verified"],
+                value="confident",
+                help="'verified' means confirmed by a chelonian specialist or "
+                     "from a vouchered institutional record.",
+            )
+        view = st.selectbox(
+            "View",
+            ["dorsal", "ventral (plastron)", "lateral profile", "head close-up", "other"],
+        )
+        state = st.selectbox("State", ["\u2014 not recorded \u2014"] + INDIAN_STATES)
+        state = None if state.startswith("\u2014") else state
+
+    with col_a:
+        uploaded = st.file_uploader(
+            "Photograph",
+            type=[s.lstrip(".") for s in sorted(ALLOWED_SUFFIXES)],
+            key="contrib_image",
+        )
+        notes = st.text_area(
+            "Notes (optional)",
+            placeholder="Circumstances, approximate size, condition. "
+                        "Do not include coordinates \u2014 they will be removed.",
+        )
+
+    if uploaded is None:
+        st.caption(
+            "Ventral (plastron) views are the scarcest and the most valuable. "
+            "The *Pangshura tecta* / *P. smithii* split cannot be learned from "
+            "carapace photographs, and those two sit on different WPA schedules."
+        )
+        return
+
+    raw = uploaded.getvalue()
+    if len(raw) > MAX_UPLOAD_BYTES:
+        st.error(f"Image exceeds {MAX_UPLOAD_BYTES / 1e6:.0f} MB.")
+        return
+
+    st.image(raw, width=320)
+    if st.button("Submit photograph", type="primary"):
+        try:
+            record = submit_image(
+                raw, species_id=species_id, view=view, state=state,
+                contributor=contributor, notes=notes, certainty=certainty,
+            )
+        except ContributionError as exc:
+            st.error(str(exc))
+            return
+        st.success(f"Received. Reference {record['id']}.")
+        if record["exif_gps_present_and_removed"]:
+            st.warning(
+                "This photograph carried GPS coordinates in its metadata. They "
+                "have been removed. Worth knowing that your camera embeds them "
+                "\u2014 it matters when sharing images of threatened species by "
+                "any route, not just this one."
+            )
+        if record["redactions"]:
+            st.warning(
+                "Removed from your notes: " + ", ".join(record["redactions"])
+            )
+
+
+def _contribute_proposal(kind: str, contributor: str) -> None:
+    species_id = None
+    current = ""
+    field = "new_record"
+
+    if kind != "new_species":
+        options = sorted(DB.ids, key=lambda i: DB.get(i).scientific_name)
+        species_id = st.selectbox(
+            "Species", options,
+            format_func=lambda i: f"{DB.get(i).scientific_name} — {DB.get(i).common_en}",
+            key="proposal_species",
+        )
+        sp = DB.get(species_id)
+        editable = {
+            "key_character": sp.key_character,
+            "diagnostics": "\n".join(f"- {d}" for d in sp.diagnostics),
+            "habitat": sp.habitat,
+            "distribution_states": ", ".join(sp.states),
+            "iucn.status": sp.iucn_status,
+            "cites": sp.cites,
+            "wpa_2022": sp.wpa,
+            "mp_notes": sp.mp_notes,
+        }
+        field = st.selectbox("Which field?", list(editable))
+        current = editable[field]
+        st.text_area("Current value", current, disabled=True, height=120)
+
+    proposed = st.text_area(
+        "Proposed value", height=140,
+        placeholder="Write the replacement text exactly as it should appear.",
+    )
+    citation = st.text_area(
+        "Citation (required)", height=80,
+        placeholder="Paper, handbook, gazette notification, or an institutional "
+                    "record with an accession or specimen number.",
+    )
+    rationale = st.text_area("Why (optional)", height=80)
+
+    st.caption(
+        "A citation is required because everything in this database is "
+        "traceable to a published source, and field staff act on these "
+        "characters. Personal observation is genuinely valuable \u2014 please "
+        "submit it as a photograph instead, where it carries real weight."
+    )
+
+    if st.button("Submit proposal", type="primary"):
+        try:
+            record = submit_proposal(
+                kind=kind, species_id=species_id, field=field,
+                current_value=current, proposed_value=proposed,
+                citation=citation, contributor=contributor, rationale=rationale,
+            )
+        except ContributionError as exc:
+            st.error(str(exc))
+            return
+        st.success(
+            f"Received. Reference {record['id']}. A maintainer reviews every "
+            "proposal by hand — nothing edits the database automatically."
+        )
+        if record["redactions"]:
+            st.warning("Removed from your text: " + ", ".join(record["redactions"]))
+
+
+# ---------------------------------------------------------------- shell
+st.title("🐢 Chelonid-ID")
+st.caption(
+    f"Field identification of Indian turtles and tortoises · {len(DB)} taxa · "
+    f"v{APP_VERSION}"
+)
+
+with st.sidebar:
+    st.markdown("### Status")
+    st.markdown(f"- Reference database: **{len(DB)} taxa**")
+    st.markdown(f"- Model: {'**loaded**' if IDENTIFIER.available else '**not installed**'}")
+    st.markdown(f"- Calibration: {'**applied**' if IDENTIFIER.calibrated else '**none**'}")
+    if IDENTIFIER.calibrated:
+        st.caption(f"T = {IDENTIFIER.temperature:.3f}")
+    st.markdown(
+        f"- IUCN cache: **{len(IUCN.cached_species)} taxa**"
+        + (f" (Red List {IUCN.red_list_version})" if IUCN.red_list_version else "")
+    )
+    st.divider()
+    st.markdown("### Scope")
+    st.caption(
+        "Non-marine chelonians of India: Geoemydidae, Trionychidae, "
+        "Testudinidae, plus the exotic Red-eared Slider. Marine turtles are "
+        "not covered."
+    )
+    st.markdown(f"[TFTSG global checklist]({TFTSG_CHECKLIST})")
+    st.divider()
+    st.caption(
+        "This tool assists identification. It does not make determinations of "
+        "law. Any species entered on an official form should be confirmed by a "
+        "competent authority."
+    )
+
+t1, t2, t3, t4, t5 = st.tabs(
+    ["Identify", "Morphological key", "Species reference", "Contribute", "Records"]
+)
+with t1:
+    tab_identify()
+with t2:
+    tab_key()
+with t3:
+    tab_reference()
+with t4:
+    tab_contribute()
+with t5:
+    tab_records()

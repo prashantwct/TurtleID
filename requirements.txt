@@ -1,0 +1,11 @@
+# Pinned. Unpinned dependencies break field re-deploys.
+streamlit==1.41.1
+ultralytics==8.3.55
+torch>=2.0.0
+torchvision>=0.15.0
+numpy==2.1.3
+pillow==11.0.0
+plotly==5.24.1
+
+# Training / calibration only
+pandas==2.2.3

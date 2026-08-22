@@ -1,0 +1,328 @@
+# Chelonid-ID
+
+Field identification of Indian turtles and tortoises for forest department use.
+YOLOv8 image classification, backed by a reference database of 30 taxa compiled
+from published literature, IUCN assessments and standard handbooks, with a
+morphological key that works without the model.
+
+Covers the non-marine chelonians of India — Geoemydidae (16), Trionychidae (8),
+Testudinidae (5) — plus the exotic Red-eared Slider, which is included
+deliberately because confusing it with a native Schedule I species is the most
+common identification error in Indian enforcement casework. Marine turtles are
+out of scope.
+
+---
+
+## Read this before deploying
+
+**The model does not exist yet.** This repository ships the reference database,
+the identification logic, the morphological key and the training pipeline. It
+does not ship trained weights, because no adequately labelled Indian chelonian
+image set exists that I can package for you. Everything except the photograph
+tab works on first run.
+
+That is not a gap to paper over. A tool that gives a Range Officer a species
+name and a percentage, on a model trained on 40 scraped images, is worse than
+no tool: it converts an honest "I don't know" into a confident wrong entry on a
+seizure memo. The abstention machinery in `core/inference.py` exists to make
+the tool say "I don't know" more often than a naive classifier would.
+
+Order of work:
+
+1. Deploy today with the **morphological key** and **species reference**. These
+   are useful immediately and need nothing but Python.
+2. Collect images (below). This is the long pole — budget months, not weeks.
+3. Train, calibrate, then enable the photograph tab.
+
+---
+
+## Install
+
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+Python 3.10+. Runs on a field laptop without a GPU; inference on CPU is
+around 200 ms per image at 320 px.
+
+---
+
+## How a determination is produced
+
+```
+photograph
+  └─ detector (optional)     locate and crop the animal
+      └─ classifier          YOLOv8-cls → raw logits (captured by forward hook)
+          └─ temperature     scalar fitted on validation; makes probabilities mean something
+              └─ OOD gate    free energy; rejects non-chelonians and untrained species
+                  └─ geography  weak prior from the recorded state
+                      └─ entropy   spread across candidates forces a downgrade
+                          └─ TIER
+```
+
+### Why not just report the softmax score
+
+A cross-entropy-trained classification head is systematically overconfident,
+and on a species it has never seen it will still return 0.97 for something. The
+raw number is not a probability of being right. Three corrections are applied:
+
+**Temperature scaling** (Guo et al. 2017). One scalar, fitted on the validation
+split. Does not change which class wins, so accuracy is untouched, but it makes
+the reported figure calibrated: of determinations reported at 80%, roughly 80%
+should be correct. `training/calibrate.py` prints Expected Calibration Error
+before and after so you can verify it worked rather than assume it.
+
+**Free-energy out-of-distribution gate** (Liu et al. 2020). Softmax cannot tell
+you "none of the above" — it always sums to 1. Free energy can. This is what
+rejects a photograph of a monitor lizard, an empty bucket, or a chelonian
+species outside the training set.
+
+> Implementation note worth knowing if you modify this: Ultralytics exposes only
+> post-softmax probabilities. Softmax is shift-invariant, so `log(p)` always
+> gives `logsumexp == 0` and free energy collapses to a constant that rejects
+> nothing. `core/inference.py` registers a forward hook on the classification
+> head to capture true logits. `training/calibrate.py` scores through the same
+> method for exactly this reason — fitting the threshold on one scale and
+> applying it on another gives a gate that silently misfires.
+
+**Geographic prior.** The recorded state multiplies each candidate: resident
+1.00, introduced 0.90, marginal 0.35, absent 0.06. The floor is deliberately
+non-zero. An out-of-range animal is not an error to be suppressed — it is what
+a trade seizure looks like, and the tool flags it as a trade record rather than
+hiding it.
+
+### Determination tiers
+
+| Tier | Posterior | What it means |
+|---|---|---|
+| `CONFIRMED` | ≥ 0.85 | Record the species; retain voucher photographs |
+| `PROBABLE` | ≥ 0.60 | Verify the named discriminating character first |
+| `TENTATIVE` | ≥ 0.45 | Genus or family only; run the morphological key |
+| `INDETERMINATE` | < 0.45 | Do not enter a species on any form; refer to a specialist |
+| `REJECTED` | — | Not a species this model knows; retake or use the key |
+
+Normalised entropy above 0.55 forces a downgrade regardless of the top-1 value,
+so a model that is 0.5/0.45 between two species cannot report `PROBABLE`.
+
+Thresholds live in `config.py`. Changing them changes what the tool tells a
+Range Officer — log any change.
+
+### Automatic flags
+
+- **Legal divergence.** If the top two candidates sit on different WPA
+  schedules, this is stated explicitly. *Pangshura tecta* is Schedule I,
+  *P. smithii* is Schedule II — the offence category differs, and the two are
+  separated by plastron colour and one scute.
+- **Out of range.** Reported as a trade, transport or release record, not a
+  wild occurrence.
+- **Threatened species.** CR/EN/VU determinations prompt DFO notification.
+- **Confusion pair.** The published discriminating character is surfaced from
+  the database for the user to check on the animal.
+
+---
+
+## Building the training set
+
+The dataset is the project. The architecture is the easy part.
+
+### Layout
+
+```
+dataset/
+  train/<species_id>/*.jpg      folder names must match ids in data/species_db.json
+  val/<species_id>/*.jpg
+negatives/*.jpg                 non-chelonian images; see below
+```
+
+### Rules that decide whether this works
+
+**Split by animal, not by photograph.** Ten frames of the same basking
+*Pangshura* from one sitting, spread across train and val, give you a
+validation accuracy that evaporates in the field. If you have capture ids, split
+on them.
+
+**Negatives are not optional.** A few hundred images of monitor lizards, frogs,
+crabs, empty riverbank, hands, buckets, tarpaulin, and out-of-focus frames. This
+set is what stops the model confidently naming a species in a photograph that
+contains no turtle. Without it, the OOD gate is untuned and untested.
+
+**Expect brutal imbalance and do not fix it by discarding data.** You will have
+hundreds of *Lissemys punctata* and single figures of *Batagur kachuga*. Judge
+the model on per-class recall, never on overall accuracy — a model that predicts
+"flapshell" for everything scores well on accuracy and is useless.
+
+**Rare species should abstain, not guess.** Under ~30 images, a class will have
+unusable recall. Leaving it in with conservative thresholds is correct: the tool
+reports `INDETERMINATE`, which is the true answer.
+
+**Photograph both surfaces.** A carapace-only dataset cannot learn the
+tecta/smithii split, because that character is on the plastron.
+
+### Sources
+
+Verified specimen photographs from MPFD rescue and seizure records, TSA-India,
+the National Chambal Sanctuary, and research collections. Public aggregators
+(GBIF, iNaturalist research-grade, India Biodiversity Portal) are usable but
+must be re-verified against the key — misidentified *Pangshura* are common in
+citizen-science data, and training on them bakes the error in. Check licences
+before redistribution.
+
+### Train and calibrate
+
+```bash
+python -m training.train_classifier --data ./dataset --epochs 120
+python -m training.calibrate --data ./dataset --negatives ./negatives
+```
+
+Calibration is not an optional polish step. Until it runs, the app displays an
+uncalibrated warning on every determination, which is the honest state.
+
+Augmentation is deliberately asymmetric: geometry is pushed hard (rotation,
+scale, occlusion), colour is kept tight. Hue and saturation jitter destroys the
+exact characters the tool depends on — coral-red versus dark-blotched plastron,
+the red postorbital patch, yellow head spots.
+
+---
+
+## Photograph capture protocol
+
+Print this for field staff. Most failed identifications are failed photographs.
+
+1. **Dorsal** — carapace square-on from directly above, whole shell, no
+   foreshortening.
+2. **Ventral** — plastron flat and whole. This one frame separates Schedule I
+   from Schedule II in *Pangshura*.
+3. **Lateral profile** — at eye level. The only view showing whether the third
+   vertebral scute is spined.
+4. **Head close-up** — filling the frame, in shade, no flash. Head markings
+   carry more diagnostic weight than shell colour.
+5. **Scale** — ruler or a ten-rupee coin in the plane of the carapace.
+
+Shoot in even shade. Direct sun blows out the pale rays on a star tortoise and
+turns a coral plastron white.
+
+---
+
+## Records
+
+Every determination is appended to `records/determinations.jsonl` before the
+result is displayed, with an image hash, observer, location and the full audit
+trail including model probabilities, the geographic multiplier applied, entropy
+and energy.
+
+Two purposes. If a determination is later challenged you need what the tool
+actually said, not what someone remembers. And every `INDETERMINATE`,
+`REJECTED` and `TENTATIVE` entry is a photograph the model needs — the Records
+tab surfaces this queue. Those images are worth far more per image than another
+hundred flapshells.
+
+---
+
+## Sources for the reference database
+
+Legal status follows the Wild Life (Protection) Amendment Act, 2022, as
+compiled in the ZSI *Fauna of India Checklist: Reptilia* v1.0
+(Mohapatra et al. 2024), Table 4. Under that amendment all Indian chelonians
+are Schedule I except three — *Melanochelys trijuga*, *Pangshura smithii* and
+*Cyclemys gemeli* — which are Schedule II.
+
+Taxonomy and conservation status follow Rhodin et al. (2021), *Turtles of the
+World*, 9th edition (Chelonian Research Monographs 8) and current IUCN Red List
+assessments. Diagnostic characters are drawn from Das (1995) *Turtles and
+Tortoises of India*, Ahmed & Das (2010) *Turtles and Tortoises of Northeast
+India*, the TFTSG *Conservation Biology of Freshwater Turtles and Tortoises*
+species accounts, and Moll (1987) for *Pangshura*. Per-species citations and
+links are in `data/species_db.json` and shown in the app.
+
+**The schedule shown is for field triage.** For any FIR, seizure memo or court
+submission, verify against the Gazette notification. This tool assists
+identification; it does not make determinations of law.
+
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Short version:
+
+- **Photographs are the bottleneck.** Everything else is built. Ventral
+  (plastron) views and rare species first.
+- **Never submit coordinates.** EXIF is stripped on intake and coordinates in
+  notes fields are redacted, but check your camera anyway — a coordinate for a
+  *Batagur kachuga* nesting bank is a poaching risk by any route.
+- **Species record changes need a citation.** Personal observation is valuable
+  and should come in as a photograph, where it carries weight without one.
+- The Contribute tab handles all of this; records land in `contributions/`,
+  which is gitignored.
+
+Maintainers: `python -m scripts.review_contributions --proposals --coverage`.
+Nothing applies automatically — every proposal is edited in by hand and
+validated, because this file determines the offence category shown to a Range
+Officer.
+
+## IUCN Red List integration
+
+```bash
+export IUCN_API_TOKEN="your-token"   # https://api.iucnredlist.org/users/sign_up
+python -m scripts.sync_iucn          # fetch and cache
+python -m scripts.sync_iucn --report # divergences, no network
+```
+
+Uses Red List **API v4** (Bearer auth). Caches to disk keyed by Red List
+version, which is what IUCN's terms ask API users to do rather than re-query
+between releases. Fully offline-tolerant: no token or no connectivity means the
+app falls back to the curated database, which is authoritative here anyway.
+
+The sync never writes to `data/species_db.json`. IUCN supplies conservation
+status; it does not supply WPA schedules, diagnostic characters, or confusion
+pairs. It prints divergences for a person to resolve.
+
+## Reference data provenance
+
+Legal status follows the Wild Life (Protection) Amendment Act, 2022 as compiled
+in the ZSI *Fauna of India Checklist: Reptilia* v1.0 (Mohapatra et al. 2024),
+cross-checked against the TRAFFIC / TSA-India / WWF-India *Identification
+Cards: Tortoises and Freshwater Turtles of India* (Singh, Badola & Fernandes
+2023) — the reference issued to Indian enforcement agencies.
+
+**Schedules agree in full**, including the three Schedule II taxa
+(*Melanochelys trijuga*, *Pangshura smithii*, *Cyclemys gemeli*). A test
+enforces this.
+
+The 2023 cards predate 15 IUCN reassessments, mostly upward — *Chitra indica*,
+*Indotestudo elongata* and *Nilssonia leithii* are now CR on cards reading EN
+or VU. Staff carrying printed cards will see the older category.
+`python -m scripts.reconcile_traffic` prints the full comparison.
+
+The cards are copyright TSA-India and TRAFFIC; reproduction requires publisher
+permission. Status codes and state lists are transcribed as factual data in
+`data/traffic_2023.json` with attribution. All diagnostic text here is written
+independently.
+
+## Files
+
+```
+app.py                       Streamlit interface
+config.py                    all thresholds, paths, priors
+data/species_db.json         the reference database — the authoritative content
+core/database.py             loading with schema validation
+core/inference.py            detection, calibration, OOD, geography, tiering
+core/morphkey.py             multi-access morphological key
+core/records.py              atomic append-only determination log
+core/iucn.py                 Red List API v4 client, cached and offline-tolerant
+core/contributions.py        contribution intake, EXIF stripping, coordinate scrubbing
+data/traffic_2023.json       TRAFFIC 2023 crosswalk for reconciliation
+training/train_classifier.py YOLOv8-cls training with a dataset audit
+training/calibrate.py        temperature scaling and OOD threshold fitting
+scripts/validate_db.py       schema and cross-reference validator (CI)
+scripts/sync_iucn.py         IUCN sync and divergence report
+scripts/reconcile_traffic.py reconciliation against the enforcement cards
+scripts/review_contributions.py  maintainer review and image gap map
+```
+
+Adding a species means editing `data/species_db.json` and adding a row to
+`MATRIX` in `core/morphkey.py`. The database is validated on load: missing
+fields, unknown IUCN categories, absent citations and unresolvable
+cross-references all fail loudly at startup rather than surfacing as a blank
+panel in the field.
