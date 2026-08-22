@@ -35,6 +35,7 @@ from core.database import SpeciesDB, SpeciesDBError
 from core.iucn import IUCNClient, compare_with_local
 from core.inference import ChelonidIdentifier
 from core.morphkey import CHARACTERS, most_discriminating, run_key
+from core.plates import coverage as plate_coverage, plates_for
 from core.records import image_fingerprint, log_determination, read_records
 
 logging.basicConfig(
@@ -178,6 +179,24 @@ def distribution_map(species) -> None:
     )
 
 
+def reference_plates(species) -> None:
+    """Published identification photographs, when they are present on disk.
+
+    A checkout that has not run training/extract_id_cards.py has none, and the
+    deployed app is one of those — the manifest is tracked but the image files
+    are not, because their copyright is not ours to redistribute. Nothing is
+    drawn in that case, not even a placeholder: an empty frame on a species
+    card reads as "no photograph exists", which is a different claim.
+    """
+    found = plates_for(species.id)
+    if not found:
+        return
+
+    for plate in found:
+        st.image(str(plate.path), use_container_width=True)
+        st.caption(plate.attribution)
+
+
 def card_section(label: str, *, nested: bool, expanded: bool = False):
     """A collapsible section, or a plain one when the card is already inside an
     expander. Streamlit refuses to nest expanders, and both the key results and
@@ -196,6 +215,8 @@ def species_card(species, *, expanded_default: bool = True, nested: bool = False
         + f" · {species.family}"
     )
     status_chip(species)
+
+    reference_plates(species)
 
     st.info(f"**Key character** — {species.key_character}")
 
@@ -825,6 +846,14 @@ with st.sidebar:
         f"- IUCN cache: **{len(IUCN.cached_species)} taxa**"
         + (f" (Red List {IUCN.red_list_version})" if IUCN.red_list_version else "")
     )
+    _plates_present, _plates_listed = plate_coverage()
+    if _plates_listed:
+        st.markdown(f"- Reference plates: **{_plates_present} of {_plates_listed} taxa**")
+        if not _plates_present:
+            st.caption(
+                "Manifest present, image files absent. Run "
+                "`python -m training.extract_id_cards --pdf <source>` to restore them."
+            )
     st.divider()
     st.markdown("### Scope")
     st.caption(

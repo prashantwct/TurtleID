@@ -30,3 +30,7 @@ pyarrow>=22.0.0; python_version >= "3.14"
 # Training / calibration only
 pandas==2.2.3; python_version < "3.14"
 pandas==2.3.3; python_version >= "3.14"
+
+# Reference-plate extraction only (training/extract_id_cards.py). Ships a
+# cp310-abi3 wheel, so one pin covers 3.10 through 3.14.
+pymupdf==1.28.2

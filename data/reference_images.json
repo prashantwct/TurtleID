@@ -1,0 +1,324 @@
+{
+  "schema_version": 1,
+  "generated": "2026-08-22",
+  "generated_by": "training/extract_id_cards.py",
+  "note": "Provenance record for reference photographs. The image files live in reference_images/ and are not tracked; re-create them by running this script against the source PDF.",
+  "sources": {
+    "traffic_2023": {
+      "title": "Identification Cards: Tortoises and Freshwater Turtles of India",
+      "publisher": "TRAFFIC India Office, Turtle Survival Alliance (TSA)-India, WWF-India",
+      "year": 2023,
+      "rights": "Copyright rests with the publishers and with the individual photographers credited per image. Extracted here for reference use within this tool. Not cleared for redistribution — the image files are gitignored, and clearing them is a decision for the project owner (see PUBLISHING.md)."
+    }
+  },
+  "images": {
+    "amyda_ornata": [
+      {
+        "file": "amyda_ornata/traffic_2023-p10.jpg",
+        "source": "traffic_2023",
+        "page": 10,
+        "credit": "© Linthoi Naorem",
+        "width": 922,
+        "height": 579,
+        "sha256": "f8cf672012dd099bcfe7042bffa6e71d990158fe5411fc28b8769d6dad50078a"
+      }
+    ],
+    "batagur_baska": [
+      {
+        "file": "batagur_baska/traffic_2023-p18.jpg",
+        "source": "traffic_2023",
+        "page": 18,
+        "credit": "© Shailendra Singh",
+        "width": 922,
+        "height": 547,
+        "sha256": "40f774a99165d64856990d9281fd7f33a813ad52a950a8c329f957b13fc7abed"
+      }
+    ],
+    "batagur_dhongoka": [
+      {
+        "file": "batagur_dhongoka/traffic_2023-p19.jpg",
+        "source": "traffic_2023",
+        "page": 19,
+        "credit": "© Shailendra Singh",
+        "width": 772,
+        "height": 485,
+        "sha256": "f90c37e41e7f89331b633bdd1c9f7283c75e4c48fbc8f47ec9fd00e75fd914c5"
+      }
+    ],
+    "batagur_kachuga": [
+      {
+        "file": "batagur_kachuga/traffic_2023-p20.jpg",
+        "source": "traffic_2023",
+        "page": 20,
+        "credit": "© Shailendra Singh",
+        "width": 922,
+        "height": 546,
+        "sha256": "b4809ad25b0480afaf2fb8f2f63fc30d494f88a08495bfd34a52ae723d6cd066"
+      }
+    ],
+    "chitra_indica": [
+      {
+        "file": "chitra_indica/traffic_2023-p11.jpg",
+        "source": "traffic_2023",
+        "page": 11,
+        "credit": "© Shailendra Singh",
+        "width": 921,
+        "height": 547,
+        "sha256": "40bf2871bd3194941b6d067551b2e12396bf5833b7d2410eeba168f152666d08"
+      }
+    ],
+    "cuora_amboinensis": [
+      {
+        "file": "cuora_amboinensis/traffic_2023-p21.jpg",
+        "source": "traffic_2023",
+        "page": 21,
+        "credit": "© Shailendra Singh",
+        "width": 921,
+        "height": 547,
+        "sha256": "350bf592571258507b5be5d085bb5d2b9856a1a47e4fc3880fd86886f25b765a"
+      }
+    ],
+    "cuora_mouhotii": [
+      {
+        "file": "cuora_mouhotii/traffic_2023-p22.jpg",
+        "source": "traffic_2023",
+        "page": 22,
+        "credit": "© Shailendra Singh",
+        "width": 922,
+        "height": 547,
+        "sha256": "da93ce90dcdeeb530e01a01271d096eb8a5a31439e09882911f9eec85ce85406"
+      }
+    ],
+    "cyclemys_gemeli": [
+      {
+        "file": "cyclemys_gemeli/traffic_2023-p23.jpg",
+        "source": "traffic_2023",
+        "page": 23,
+        "credit": "© Rajeev Basumatary",
+        "width": 922,
+        "height": 546,
+        "sha256": "2276e2a2646ff2d7f9ee8047a0c2a46b3b86a6cc6a72ed8b27eab74111cae63a"
+      }
+    ],
+    "geochelone_elegans": [
+      {
+        "file": "geochelone_elegans/traffic_2023-p34.jpg",
+        "source": "traffic_2023",
+        "page": 34,
+        "credit": "© Arunima Singh",
+        "width": 922,
+        "height": 546,
+        "sha256": "f742b98d0c4795b17ca84e4c66876fa724fd2ff029706ecf78fb546c1f62968e"
+      }
+    ],
+    "geoclemys_hamiltonii": [
+      {
+        "file": "geoclemys_hamiltonii/traffic_2023-p24.jpg",
+        "source": "traffic_2023",
+        "page": 24,
+        "credit": "© Arunima Singh",
+        "width": 922,
+        "height": 547,
+        "sha256": "bcfb1d8265b930ec74361e1b91bd7c3a3a864c6cddd3de44dab7760649dfbe47"
+      }
+    ],
+    "hardella_thurjii": [
+      {
+        "file": "hardella_thurjii/traffic_2023-p25.jpg",
+        "source": "traffic_2023",
+        "page": 25,
+        "credit": "© Shailendra Singh",
+        "width": 922,
+        "height": 547,
+        "sha256": "88a26c67f17c632a88ec97c0a37756c778002afb7aa5a795bed77f7b0a6d86af"
+      }
+    ],
+    "indotestudo_elongata": [
+      {
+        "file": "indotestudo_elongata/traffic_2023-p36.jpg",
+        "source": "traffic_2023",
+        "page": 36,
+        "credit": "© Saket Badola",
+        "width": 922,
+        "height": 552,
+        "sha256": "be60fdeabfe7581b1099c7f0e301b5a13e7105b9cd2d6fa2c972bb0224db76aa"
+      }
+    ],
+    "indotestudo_travancorica": [
+      {
+        "file": "indotestudo_travancorica/traffic_2023-p35.jpg",
+        "source": "traffic_2023",
+        "page": 35,
+        "credit": "© Ajay Kartik",
+        "width": 922,
+        "height": 547,
+        "sha256": "f211bc1411ca7b04783f1ee8fd892317039e941d5ce5b5fd5b23134fb3f0cec3"
+      }
+    ],
+    "lissemys_punctata": [
+      {
+        "file": "lissemys_punctata/traffic_2023-p16.jpg",
+        "source": "traffic_2023",
+        "page": 16,
+        "credit": "© Saket Badola",
+        "width": 922,
+        "height": 546,
+        "sha256": "3e92b732e7ed6df6e8cad67f751ff3b778059f90a16838cb4b7567d437186795"
+      }
+    ],
+    "manouria_emys": [
+      {
+        "file": "manouria_emys/traffic_2023-p37.jpg",
+        "source": "traffic_2023",
+        "page": 37,
+        "credit": "© Shailendra Singh",
+        "width": 922,
+        "height": 547,
+        "sha256": "1ad7c28784ac2534ae60abfed1f4e11cefd31007c731f5e0f87164a6001adc6c"
+      }
+    ],
+    "melanochelys_tricarinata": [
+      {
+        "file": "melanochelys_tricarinata/traffic_2023-p26.jpg",
+        "source": "traffic_2023",
+        "page": 26,
+        "credit": "© Saket Badola",
+        "width": 922,
+        "height": 547,
+        "sha256": "a0a9099941e486670c5ca1ec21c88101410918b37ab89441f9ffc9ea00335f05"
+      }
+    ],
+    "melanochelys_trijuga": [
+      {
+        "file": "melanochelys_trijuga/traffic_2023-p27.jpg",
+        "source": "traffic_2023",
+        "page": 27,
+        "credit": "© Shailendra Singh",
+        "width": 922,
+        "height": 547,
+        "sha256": "947624c6b3326ce6f65536b0b63249c020b2a17eda4dadd5dbc359255d26410c"
+      }
+    ],
+    "morenia_petersi": [
+      {
+        "file": "morenia_petersi/traffic_2023-p28.jpg",
+        "source": "traffic_2023",
+        "page": 28,
+        "credit": "© Shailendra Singh",
+        "width": 923,
+        "height": 546,
+        "sha256": "7340125e1474b03375e8e6aa6b5d355d18bba2f6371c6b2fc1a92f3e2e9fa140"
+      }
+    ],
+    "nilssonia_gangetica": [
+      {
+        "file": "nilssonia_gangetica/traffic_2023-p12.jpg",
+        "source": "traffic_2023",
+        "page": 12,
+        "credit": "© Shailendra Singh",
+        "width": 923,
+        "height": 519,
+        "sha256": "c0744dc5fbfb869fced81d2fa9da061ec963a95941787dc7eab905869e6812cc"
+      }
+    ],
+    "nilssonia_hurum": [
+      {
+        "file": "nilssonia_hurum/traffic_2023-p13.jpg",
+        "source": "traffic_2023",
+        "page": 13,
+        "credit": "© Shailendra Singh",
+        "width": 922,
+        "height": 546,
+        "sha256": "33e28c18326a0255af5dc5fd8ccf13fe9085221bf95b03b648a251ddad00e375"
+      }
+    ],
+    "nilssonia_leithii": [
+      {
+        "file": "nilssonia_leithii/traffic_2023-p14.jpg",
+        "source": "traffic_2023",
+        "page": 14,
+        "credit": "© Shashwat Sirsi",
+        "width": 922,
+        "height": 547,
+        "sha256": "02c7fa5d55598f254458a0fb407d7ab3ac98384e7cd69770bc7fa2a351c2d35b"
+      }
+    ],
+    "nilssonia_nigricans": [
+      {
+        "file": "nilssonia_nigricans/traffic_2023-p15.jpg",
+        "source": "traffic_2023",
+        "page": 15,
+        "credit": "© Shailendra Singh",
+        "width": 922,
+        "height": 546,
+        "sha256": "3cd485078dea247df553d61d50b1f869f87928701818278f4dd9b3cd7462a023"
+      }
+    ],
+    "pangshura_smithii": [
+      {
+        "file": "pangshura_smithii/traffic_2023-p29.jpg",
+        "source": "traffic_2023",
+        "page": 29,
+        "credit": "© Arunima Singh",
+        "width": 921,
+        "height": 579,
+        "sha256": "e07a86ae985b31a34c0ecf1eedf17d1547548fd4f1af9475d1ade1e2244c7b25"
+      }
+    ],
+    "pangshura_sylhetensis": [
+      {
+        "file": "pangshura_sylhetensis/traffic_2023-p30.jpg",
+        "source": "traffic_2023",
+        "page": 30,
+        "credit": "© Rajeev Basumatry",
+        "width": 922,
+        "height": 580,
+        "sha256": "e712e872520f160987fc1e54215f3313079263261e7fc89885e3ec891031a13b"
+      }
+    ],
+    "pangshura_tecta": [
+      {
+        "file": "pangshura_tecta/traffic_2023-p31.jpg",
+        "source": "traffic_2023",
+        "page": 31,
+        "credit": "© Saket Badola",
+        "width": 922,
+        "height": 547,
+        "sha256": "046a614119e5c5d202fee7e144571ef4005d28a5c7f3a8c54ec4b5d6cb8eb000"
+      }
+    ],
+    "pangshura_tentoria": [
+      {
+        "file": "pangshura_tentoria/traffic_2023-p32.jpg",
+        "source": "traffic_2023",
+        "page": 32,
+        "credit": "© Rishika Dubla",
+        "width": 922,
+        "height": 547,
+        "sha256": "c465c24773fd08ce75c42c89c9a61fe4460e23a68341d50c889353165e73e264"
+      }
+    ],
+    "pelochelys_cantorii": [
+      {
+        "file": "pelochelys_cantorii/traffic_2023-p17.jpg",
+        "source": "traffic_2023",
+        "page": 17,
+        "credit": "© Nikhil Peraje",
+        "width": 922,
+        "height": 546,
+        "sha256": "c5183cafc3ab24592cffbac65c023211b2e9e0cf98314b3a2211fc6dc6b83305"
+      }
+    ],
+    "vijayachelys_silvatica": [
+      {
+        "file": "vijayachelys_silvatica/traffic_2023-p33.jpg",
+        "source": "traffic_2023",
+        "page": 33,
+        "credit": "© Peter Praschag",
+        "width": 921,
+        "height": 547,
+        "sha256": "bd8dc07dd293cdd0f1411c9c19ee8bc3d53b8a04a315c9de7daced80e57ee145"
+      }
+    ]
+  }
+}

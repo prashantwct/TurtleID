@@ -16,3 +16,7 @@ models/calibration.json
 models/runs/
 negatives/
 records/
+
+# Reference photographs: provenance is tracked in data/reference_images.json,
+# the image files themselves are not. See PUBLISHING.md.
+reference_images/
