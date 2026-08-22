@@ -232,6 +232,78 @@ arrangement ever needs unwinding, `reference_images/` can go back into
 `.gitignore` and nothing else breaks — the app already treats an absent file as
 normal. See PUBLISHING.md.
 
+### Promoting contributed photographs
+
+Images submitted through the Contribute tab land in `contributions/`. That is
+where they stop — being contributed does not put an image in front of the
+model. This carries them across:
+
+```bash
+python -m training.promote_contributions --list
+python -m training.promote_contributions --accept 4f2a9c1e
+python -m training.promote_contributions --accept-all-confident
+```
+
+Two kinds of contribution are held back rather than promoted: those submitted
+as anything other than `confident`, and those with no species id. Both need a
+determination first. A photograph filed under the wrong species does not
+announce itself — it becomes a class the model learns wrongly, surfacing later
+as a confident misidentification with nothing pointing back at the cause.
+
+Capture ids are derived from contributor and submission date, which errs toward
+grouping: two animals merged into one capture costs a little split flexibility,
+whereas one animal split across two captures puts the same individual in train
+and val. Use `--capture-suffix` when one contributor really did send two
+animals on one day.
+
+`contributions/promoted.json` records what has already moved, so re-running
+promotes only what is new. The contribution log itself is append-only and is
+never rewritten.
+
+### Durable contribution storage
+
+`contributions/` is written to the disk of whatever machine runs the app. On a
+field laptop that persists. On Streamlit Community Cloud it does not — every
+reboot and every push to the deployed branch re-clones the repository, and
+anything submitted since is gone. An app that accepts a photograph, thanks the
+contributor and then loses it is worse than one with no Contribute tab, because
+the contributor believes the job is done.
+
+So when object storage is configured, every submission is written there too,
+and a photograph that cannot be stored durably is **refused** rather than
+accepted into a directory that will not survive the week. The sidebar states
+which mode is in force.
+
+Any S3-compatible service works — AWS S3, Cloudflare R2, Backblaze B2, Wasabi,
+MinIO. Set these in the deployment's secrets, in the environment, or in a
+gitignored `.env`:
+
+```
+CHELONID_S3_BUCKET       required; setting it switches durable mode on
+CHELONID_S3_ACCESS_KEY   required
+CHELONID_S3_SECRET_KEY   required
+CHELONID_S3_ENDPOINT     required for anything that is not AWS S3
+CHELONID_S3_REGION       optional, defaults to us-east-1
+CHELONID_S3_PREFIX       optional key prefix
+```
+
+A bucket named without credentials is treated as a misconfiguration and
+reported, not quietly ignored — that mistake otherwise looks identical to
+working correctly, right up until the first restart.
+
+Then pull what has been submitted and promote it:
+
+```bash
+python -m training.pull_contributions --list
+python -m training.pull_contributions
+python -m training.promote_contributions --list
+```
+
+Pulling is idempotent: records already present locally are left alone and their
+photographs are not re-downloaded. A record whose photograph is missing from
+the bucket is reported rather than skipped, because that combination means a
+submission was accepted and its image lost.
+
 ### Filing field photographs as they arrive
 
 ```bash

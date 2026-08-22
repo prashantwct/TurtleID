@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import io
 import logging
+import os
 from pathlib import Path
 
 import streamlit as st
@@ -36,6 +37,7 @@ from core.iucn import IUCNClient, compare_with_local
 from core.inference import ChelonidIdentifier
 from core.morphkey import CHARACTERS, most_discriminating, run_key
 from core.plates import coverage as plate_coverage, plates_for
+from core import storage
 from core.records import image_fingerprint, log_determination, read_records
 
 logging.basicConfig(
@@ -46,6 +48,34 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 st.set_page_config(page_title="Chelonid-ID", page_icon="🐢", layout="wide")
+
+
+def _publish_secrets() -> None:
+    """Copy deployment secrets into the environment.
+
+    core/ reads configuration with config.env_value so that the scripts and the
+    tests work without Streamlit. This is the one place that knows about
+    st.secrets, and it runs before anything reads a setting.
+
+    Existing environment variables win, so a local .env or a shell export is
+    not overridden by a deployment secret of the same name.
+    """
+    try:
+        secrets = st.secrets
+    except Exception:
+        return  # no secrets.toml, which is the normal local case
+    for key in ("IUCN_API_TOKEN", "CHELONID_S3_BUCKET", "CHELONID_S3_ACCESS_KEY",
+                "CHELONID_S3_SECRET_KEY", "CHELONID_S3_ENDPOINT",
+                "CHELONID_S3_REGION", "CHELONID_S3_PREFIX"):
+        try:
+            value = secrets[key]
+        except Exception:
+            continue
+        if value and not os.environ.get(key):
+            os.environ[key] = str(value)
+
+
+_publish_secrets()
 
 TIER_STYLE = {
     "CONFIRMED": ("✅", "success"),
@@ -846,6 +876,12 @@ with st.sidebar:
         f"- IUCN cache: **{len(IUCN.cached_species)} taxa**"
         + (f" (Red List {IUCN.red_list_version})" if IUCN.red_list_version else "")
     )
+    st.markdown(f"- Contribution storage: **{storage.describe()}**")
+    if not storage.configured():
+        st.caption(
+            "Submitted photographs are written to this machine only. On a "
+            "hosted deployment that disk is wiped on every restart."
+        )
     _plates_present, _plates_listed = plate_coverage()
     if _plates_listed:
         st.markdown(f"- Reference plates: **{_plates_present} of {_plates_listed} taxa**")

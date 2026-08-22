@@ -207,6 +207,100 @@ def test_plate_lookup_survives_an_unknown_species():
     assert plates_for("no_such_species") == []
 
 
+# ---------------------------------------------------------------- durable storage
+
+class FakeS3:
+    """Records what would be sent. Nothing here talks to a network."""
+
+    def __init__(self, fail_on: str | None = None):
+        self.objects: dict[str, bytes] = {}
+        self.fail_on = fail_on
+
+    def put_object(self, *, Bucket, Key, Body, ContentType):  # noqa: N803
+        if self.fail_on and self.fail_on in Key:
+            raise RuntimeError("bucket unreachable")
+        self.objects[Key] = Body
+
+    def get_object(self, *, Bucket, Key):  # noqa: N803
+        import io
+        return {"Body": io.BytesIO(self.objects[Key])}
+
+    def list_objects_v2(self, **kwargs):
+        prefix = kwargs.get("Prefix", "")
+        return {"Contents": [{"Key": k} for k in sorted(self.objects) if k.startswith(prefix)],
+                "IsTruncated": False}
+
+
+@pytest.fixture
+def s3_settings():
+    from core import storage
+    # Credentials long enough that a substring check means something — a
+    # one-character secret matches inside any URL and proves nothing.
+    return storage.Settings(
+        bucket="chelonid", access_key="AKIAEXAMPLEACCESSKEY",
+        secret_key="wJalrXUtnFEMIEXAMPLEKEYzrfiCYEXAMPLEKEY",
+        endpoint="https://example.invalid", region="us-east-1", prefix="field/",
+    )
+
+
+def test_storage_is_off_until_a_bucket_is_named(monkeypatch):
+    from core import storage
+    monkeypatch.setattr(storage, "env_value", lambda key: None)
+    assert storage.settings() is None
+    assert storage.configured() is False
+    assert storage.describe() == "local only"
+
+
+def test_a_bucket_without_credentials_is_an_error_not_a_default(monkeypatch):
+    """Silently falling back to local would look identical until the first reboot."""
+    from core import storage
+    monkeypatch.setattr(
+        storage, "env_value",
+        lambda key: "chelonid" if key == storage.BUCKET_ENV else None,
+    )
+    with pytest.raises(storage.StorageError):
+        storage.settings()
+    assert storage.configured() is False          # never raises at the UI boundary
+    assert "misconfigured" in storage.describe()
+
+
+def test_keys_carry_the_configured_prefix(s3_settings):
+    from core import storage
+    fake = FakeS3()
+    key = storage.put_image("lissemys_punctata_abc.jpg", b"jpegbytes",
+                            s3=fake, config=s3_settings)
+    assert key == "field/images/lissemys_punctata_abc.jpg"
+    assert fake.objects[key] == b"jpegbytes"
+
+
+def test_records_round_trip_through_storage(s3_settings):
+    import json
+
+    from core import storage
+    fake = FakeS3()
+    record = {"id": "4f2a9c1e", "species_id": "pangshura_tecta", "image_file": "x.jpg"}
+    key = storage.put_record(record, s3=fake, config=s3_settings)
+    assert storage.list_records(s3=fake, config=s3_settings) == [key]
+    assert json.loads(storage.fetch(key, s3=fake, config=s3_settings)) == record
+
+
+def test_a_failed_upload_raises_rather_than_reporting_success(s3_settings):
+    """The submission must not be acknowledged if the photograph was not stored."""
+    from core import storage
+    fake = FakeS3(fail_on="images/")
+    with pytest.raises(storage.StorageError):
+        storage.put_image("x.jpg", b"data", s3=fake, config=s3_settings)
+
+
+def test_describe_never_leaks_a_credential(s3_settings, monkeypatch):
+    from core import storage
+    monkeypatch.setattr(storage, "settings", lambda: s3_settings)
+    described = storage.describe()
+    assert s3_settings.secret_key not in described
+    assert s3_settings.access_key not in described
+    assert s3_settings.bucket in described
+
+
 # ---------------------------------------------------------------- dataset splitting
 
 def test_capture_id_groups_a_burst_together():
@@ -250,6 +344,31 @@ def test_ingested_names_round_trip_through_the_splitter():
     from training.prepare_dataset import capture_id
     assert capture_id(Path("chambal-2026-08-19--01.jpg")) == "chambal-2026-08-19"
     assert capture_id(Path("chambal-2026-08-19--12.jpg")) == "chambal-2026-08-19"
+
+
+def test_contributions_from_one_person_on_one_day_are_one_capture():
+    """Grouping too hard costs flexibility; grouping too little leaks an animal."""
+    from training.promote_contributions import capture_for
+    first = {"contributor": "R. Officer, Churna", "submitted_utc": "2026-08-22T04:10:00+00:00"}
+    second = {"contributor": "R. Officer, Churna", "submitted_utc": "2026-08-22T06:55:00+00:00"}
+    other_day = {"contributor": "R. Officer, Churna", "submitted_utc": "2026-08-23T04:10:00+00:00"}
+    assert capture_for(first, None) == capture_for(second, None)
+    assert capture_for(first, None) != capture_for(other_day, None)
+    assert capture_for(first, "second-animal") != capture_for(first, None)
+
+
+def test_promoted_capture_ids_survive_the_splitter():
+    """A capture id that the splitter re-reads differently would leak silently."""
+    from pathlib import Path
+
+    from training.prepare_dataset import capture_id
+    from training.promote_contributions import capture_for
+    capture = capture_for(
+        {"contributor": "R. Officer, Churna", "submitted_utc": "2026-08-22T04:10:00+00:00"},
+        None,
+    )
+    assert "--" not in capture
+    assert capture_id(Path(f"{capture}--01.jpg")) == capture
 
 
 def test_a_single_capture_class_gets_no_validation_split():

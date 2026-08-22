@@ -116,3 +116,37 @@ INDIA_BIODIVERSITY = "https://indiabiodiversity.org/species/search?q={name}"
 RECORD_FILE = RECORD_DIR / "determinations.jsonl"
 APP_LOG_FILE = LOG_DIR / "chelonid.log"
 APP_VERSION = "1.0.0"
+
+
+# ---------------------------------------------------------------- secrets
+def env_value(key: str) -> str | None:
+    """A secret from the environment, falling back to a local .env file.
+
+    .env is gitignored and is only ever read here, never written. A credential
+    committed to the repository is a credential that has to be cycled.
+
+    On Streamlit Community Cloud the deployment's secrets are copied into the
+    environment at startup, so the same lookup serves both.
+    """
+    import os
+
+    value = os.environ.get(key, "").strip()
+    if value:
+        return value
+
+    env_file = BASE_DIR / ".env"
+    if not env_file.exists():
+        return None
+    try:
+        for line in env_file.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            name, _, raw = line.partition("=")
+            if name.strip() == key:
+                return raw.strip().strip("'\"") or None
+    except OSError:
+        # Never let an unreadable .env take down the app; the caller treats a
+        # missing secret as "not configured", which is a supported state.
+        pass
+    return None

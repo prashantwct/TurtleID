@@ -23,6 +23,11 @@ pillow==11.3.0; python_version >= "3.14"
 
 plotly==5.24.1
 
+# Durable contribution storage (core/storage.py). Pure Python, one wheel for
+# every interpreter. Only used when CHELONID_S3_BUCKET is set; the app runs
+# without it, storing contributions locally and saying so.
+boto3==1.43.78
+
 # Streamlit pulls pyarrow itself; the pin only keeps 3.14 off the wheel-less
 # releases. Nothing in this app imports it directly.
 pyarrow>=22.0.0; python_version >= "3.14"
