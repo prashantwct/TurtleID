@@ -40,7 +40,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import time
 import urllib.error
 import urllib.parse
@@ -49,7 +48,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from config import DATA_DIR
+from config import DATA_DIR, env_value
 
 logger = logging.getLogger(__name__)
 
@@ -75,23 +74,7 @@ def get_token() -> str | None:
     .env is gitignored. Storing a token in the repository is how tokens end up
     revoked, so it is never written by this code — only read.
     """
-    token = os.environ.get(TOKEN_ENV, "").strip()
-    if token:
-        return token
-
-    env_file = Path(__file__).resolve().parent.parent / ".env"
-    if env_file.exists():
-        try:
-            for line in env_file.read_text(encoding="utf-8").splitlines():
-                line = line.strip()
-                if not line or line.startswith("#") or "=" not in line:
-                    continue
-                key, _, value = line.partition("=")
-                if key.strip() == TOKEN_ENV:
-                    return value.strip().strip("'\"")
-        except OSError as exc:
-            logger.warning("Could not read .env: %s", exc)
-    return None
+    return env_value(TOKEN_ENV)
 
 
 class IUCNClient:

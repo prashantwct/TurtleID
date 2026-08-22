@@ -37,6 +37,7 @@ from pathlib import Path
 from typing import Any
 
 from config import APP_VERSION, BASE_DIR, INDIAN_STATES
+from core import storage
 
 logger = logging.getLogger(__name__)
 
@@ -157,6 +158,23 @@ def submit_image(
     target = IMAGE_DIR / f"{species_id or 'unidentified'}_{digest}.jpg"
     if target.exists():
         raise ContributionError("This image has already been contributed.")
+
+    # Durable storage first, when it is configured. The local directory does not
+    # survive a reboot on a hosted deployment, so a photograph that exists only
+    # there has not really been received — better to refuse it and let the
+    # contributor try again than to thank them for something already lost.
+    stored_key = None
+    if storage.configured():
+        try:
+            stored_key = storage.put_image(target.name, clean_bytes)
+        except storage.StorageError as exc:
+            logger.error("Durable storage rejected a contribution: %s", exc)
+            raise ContributionError(
+                "This photograph could not be stored and has not been kept. "
+                "Nothing has been lost from your device — please try again, and "
+                "tell the maintainer if it keeps failing."
+            ) from exc
+
     target.write_bytes(clean_bytes)
 
     clean_notes, redactions = scrub_free_text(notes)
@@ -177,8 +195,19 @@ def submit_image(
         "exif_gps_present_and_removed": had_gps,
         "redactions": redactions,
         "status": "pending",
+        "stored_key": stored_key,
     }
     _write(record)
+
+    if stored_key:
+        try:
+            storage.put_record(record)
+        except storage.StorageError as exc:
+            # The photograph is already safe; losing its metadata costs the
+            # species label, which pull_contributions reports rather than
+            # guessing at. Not worth failing the submission over.
+            logger.error("Stored %s but not its record: %s", stored_key, exc)
+
     return record
 
 
