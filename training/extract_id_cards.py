@@ -31,10 +31,10 @@ considered. Cards are then matched to a species by the scientific name in their
 text, taking synonyms from the `data/traffic_2023.json` crosswalk. A card that
 matches nothing is reported and skipped rather than guessed at.
 
-The images are written to `reference_images/<species_id>/` which is gitignored.
+The images are written to `reference_images/<species_id>/`, and
 `data/reference_images.json` records where every file came from, who took it,
-and under what terms, and is tracked. Committing the photographs themselves is
-a licensing decision, not an engineering one: see PUBLISHING.md.
+and under what terms. Both are tracked. The credit travels with the image —
+`core/plates.py` carries it and the app prints it under every photograph.
 """
 
 from __future__ import annotations
@@ -80,10 +80,10 @@ DEFAULT_SOURCE = {
     "year": 2023,
     "rights": (
         "Copyright rests with the publishers and with the individual "
-        "photographers credited per image. Extracted here for reference use "
-        "within this tool. Not cleared for redistribution — the image files are "
-        "gitignored, and clearing them is a decision for the project owner "
-        "(see PUBLISHING.md)."
+        "photographers credited per image. Reproduced in this tool for "
+        "identification reference, with the credit shown beside every image. "
+        "Not a grant of any further right: anyone reusing these files needs "
+        "the publishers' permission. See PUBLISHING.md."
     ),
 }
 

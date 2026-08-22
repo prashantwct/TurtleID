@@ -222,11 +222,37 @@ The plates are worth having for what they are — a known-good photograph beside
 each species in the reference tab, which is useful in the field today — and as
 the thing field photographs accumulate against.
 
-**On copyright.** `data/reference_images.json` records the source, page,
-photographer credit and rights for every extracted file, and is tracked.
-`reference_images/` is gitignored, so the images are not redistributed by this
-repository and the deployed app shows none of them. Clearing them for
-publication is a decision for whoever owns this project — see PUBLISHING.md.
+**On copyright.** The photographs are tracked, and so is
+`data/reference_images.json`, which records the source, page, photographer
+credit and rights for every one of them. They remain the property of the
+publishers and of the photographers credited on each card, and the app prints
+that credit under every plate. Including them here is not a licence to reuse
+them: anyone wanting to do that needs the publishers' permission. If the
+arrangement ever needs unwinding, `reference_images/` can go back into
+`.gitignore` and nothing else breaks — the app already treats an absent file as
+normal. See PUBLISHING.md.
+
+### Filing field photographs as they arrive
+
+```bash
+python -m training.ingest_field_images --species lissemys_punctata \
+    --capture chambal-2026-08-19 ~/rescue/*.jpg
+```
+
+**Once per animal, not once per batch.** Everything in one invocation becomes
+one capture, and captures move between splits whole. Two animals filed under a
+single capture id can never be separated again, and the validation split
+quietly stops meaning anything from that point on.
+
+Every file is rewritten through the same EXIF scrubber the Contribute tab uses,
+and the count that arrived carrying GPS is reported — worth passing back to
+whoever sent them, because their camera is embedding locality on every
+photograph they take, not just these. `pool/` is gitignored and the privacy CI
+job fails if it is ever tracked.
+
+Species ids are checked against the database on the way in. A photograph filed
+under a name the database does not know becomes a class the model can emit and
+the app cannot resolve.
 
 ### Train and calibrate
 

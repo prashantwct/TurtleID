@@ -34,7 +34,7 @@ jobs:
         run: |
           set -e
           fail=0
-          for d in contributions records logs; do
+          for d in contributions records logs pool; do
             if git ls-files --error-unmatch "$d" >/dev/null 2>&1; then
               echo "::error::$d/ is tracked. It may contain locality data."; fail=1
             fi

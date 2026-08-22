@@ -17,6 +17,10 @@ models/runs/
 negatives/
 records/
 
-# Reference photographs: provenance is tracked in data/reference_images.json,
-# the image files themselves are not. See PUBLISHING.md.
-reference_images/
+# Reference photographs are tracked, with per-image credit and rights recorded
+# in data/reference_images.json. See PUBLISHING.md.
+
+# Field photographs awaiting labelling. Never tracked: they carry locality data
+# in EXIF and in the frame itself, and a coordinate for a nesting bank is the
+# one thing this project must not publish.
+pool/

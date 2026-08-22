@@ -3,13 +3,13 @@ Reference photographs.
 
 These are published identification plates, extracted by
 `training/extract_id_cards.py` and recorded in `data/reference_images.json`.
-The manifest is tracked; the image files are not, because their copyright sits
-with the photographers and publishers named in it (see PUBLISHING.md).
+Their copyright sits with the photographers and publishers named in the
+manifest, so `Plate.attribution` is not decoration — it is the condition on
+which they are shown, and any caller displaying a plate must display it.
 
-That split is deliberate and everything here is written around it: a manifest
-entry whose file is absent is normal, not an error. A checkout that has never
-run the extractor — including the deployed app — simply shows no plates, and
-the species reference works exactly as it did before.
+A manifest entry whose file is absent is still treated as normal rather than as
+an error, so a partial checkout, or a manifest extended before the extractor is
+re-run, degrades to showing fewer plates instead of failing.
 
 Nothing in this module imports Pillow or reads image data. It resolves paths
 and provenance; the caller displays the file.
