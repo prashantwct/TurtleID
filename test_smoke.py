@@ -165,3 +165,77 @@ def test_iucn_client_degrades_without_token(tmp_path):
     client = IUCNClient(token=None, cache_path=tmp_path / "c.json")
     assert client.configured is False
     assert client.fetch_species("Batagur kachuga") is None  # returns None, never raises
+
+
+# ---------------------------------------------------------------- reference plates
+
+def test_plate_manifest_ids_are_real_species(db):
+    """A manifest entry for an unknown id would never render and never be noticed."""
+    import json
+
+    from config import REFERENCE_MANIFEST
+    if not REFERENCE_MANIFEST.is_file():
+        pytest.skip("no reference manifest in this checkout")
+    manifest = json.loads(REFERENCE_MANIFEST.read_text(encoding="utf-8"))
+    unknown = [sid for sid in manifest["images"] if sid not in db]
+    assert not unknown, unknown
+
+
+def test_plate_manifest_records_a_source_for_every_image():
+    """Provenance is the whole reason the manifest is tracked."""
+    import json
+
+    from config import REFERENCE_MANIFEST
+    if not REFERENCE_MANIFEST.is_file():
+        pytest.skip("no reference manifest in this checkout")
+    manifest = json.loads(REFERENCE_MANIFEST.read_text(encoding="utf-8"))
+    for species_id, entries in manifest["images"].items():
+        for entry in entries:
+            assert entry.get("source") in manifest["sources"], f"{species_id}: {entry}"
+            assert manifest["sources"][entry["source"]].get("rights"), "source states no rights"
+
+
+def test_missing_plate_files_are_not_offered():
+    """The tracked manifest with untracked images is the normal deployed state."""
+    from core.plates import plates_for
+    for plate in plates_for("lissemys_punctata"):
+        assert plate.path.is_file()
+
+
+def test_plate_lookup_survives_an_unknown_species():
+    from core.plates import plates_for
+    assert plates_for("no_such_species") == []
+
+
+# ---------------------------------------------------------------- dataset splitting
+
+def test_capture_id_groups_a_burst_together():
+    from pathlib import Path
+
+    from training.prepare_dataset import capture_id
+    assert capture_id(Path("kanha-2024-06-11--03.jpg")) == "kanha-2024-06-11"
+    assert capture_id(Path("kanha-2024-06-11--04.jpg")) == "kanha-2024-06-11"
+    assert capture_id(Path("IMG_0431.jpg")) == "IMG_0431"
+
+
+def test_no_capture_lands_in_two_splits():
+    """Split by animal, not by photograph — the whole point of the grouping."""
+    import random
+
+    from training.prepare_dataset import split_captures
+    captures = [f"capture{n}" for n in range(8)]
+    train, val, test = split_captures(captures, 0.2, 0.1, random.Random(17))
+    assert sorted(train + val + test) == sorted(captures)
+    assert not (set(train) & set(val)) and not (set(train) & set(test))
+    assert not (set(val) & set(test))
+    assert val, "eight captures must yield a validation split"
+
+
+def test_a_single_capture_class_gets_no_validation_split():
+    """Better an admitted blind spot than a validation number that means nothing."""
+    import random
+
+    from training.prepare_dataset import split_captures
+    train, val, test = split_captures(["only"], 0.2, 0.1, random.Random(17))
+    assert train == ["only"]
+    assert val == [] and test == []

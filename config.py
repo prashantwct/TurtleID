@@ -20,6 +20,13 @@ CLASSIFIER_PATH = MODEL_DIR / "chelonid_cls.pt"      # YOLOv8-cls weights
 DETECTOR_PATH = MODEL_DIR / "chelonid_det.pt"        # YOLOv8 detection weights (optional)
 CALIBRATION_PATH = MODEL_DIR / "calibration.json"    # temperature + energy threshold
 
+# Reference photographs extracted from published identification material. The
+# manifest is tracked because it is the provenance record; the image files are
+# not, because their copyright sits with the photographers and publishers named
+# in it. See PUBLISHING.md. Everything that reads them treats absence as normal.
+REFERENCE_IMAGE_DIR = BASE_DIR / "reference_images"
+REFERENCE_MANIFEST = DATA_DIR / "reference_images.json"
+
 for _d in (MODEL_DIR, RECORD_DIR, LOG_DIR):
     _d.mkdir(parents=True, exist_ok=True)
 

@@ -186,6 +186,48 @@ must be re-verified against the key — misidentified *Pangshura* are common in
 citizen-science data, and training on them bakes the error in. Check licences
 before redistribution.
 
+### Seeding from published identification cards
+
+`training/extract_id_cards.py` pulls the species photographs out of the TRAFFIC
+India / TSA-India / WWF-India *Identification Cards: Tortoises and Freshwater
+Turtles of India* (2023) — the same document `data/traffic_2023.json` is
+reconciled against.
+
+```bash
+python -m training.extract_id_cards --pdf "path/to/ID Cards 2023.pdf" --dry-run
+python -m training.extract_id_cards --pdf "path/to/ID Cards 2023.pdf"
+```
+
+It takes one photograph per species card, resolving the printed name through
+the crosswalk in `data/traffic_2023.json` — the 2023 edition prints *Amyda
+cartilaginea* for what this database calls `amyda_ornata`. It leaves the
+distribution maps alone: the app draws its own from `states`, and the printed
+map on the *Lissemys punctata* card is legended *Chitra indica*, which is an
+error in the source.
+
+The 2023 edition yields **28 photographs covering 28 of the 30 taxa** — one each,
+missing only *Manouria impressa* and the Red-eared Slider.
+
+**One image per species is a reference library, not a training set.** Feeding it
+to the classifier gives every class a single capture, which means no validation
+split, which means `calibrate.py` cannot fit a temperature and the abstention
+machinery does not function. `prepare_dataset.py` says so in as many words and
+does not pretend otherwise:
+
+```bash
+python -m training.prepare_dataset --pool ./pool --out ./dataset --seed-with-reference-plates
+```
+
+The plates are worth having for what they are — a known-good photograph beside
+each species in the reference tab, which is useful in the field today — and as
+the thing field photographs accumulate against.
+
+**On copyright.** `data/reference_images.json` records the source, page,
+photographer credit and rights for every extracted file, and is tracked.
+`reference_images/` is gitignored, so the images are not redistributed by this
+repository and the deployed app shows none of them. Clearing them for
+publication is a decision for whoever owns this project — see PUBLISHING.md.
+
 ### Train and calibrate
 
 ```bash
