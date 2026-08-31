@@ -379,3 +379,76 @@ def test_a_single_capture_class_gets_no_validation_split():
     train, val, test = split_captures(["only"], 0.2, 0.1, random.Random(17))
     assert train == ["only"]
     assert val == [] and test == []
+
+
+# --------------------------------------------------------------- folder import
+
+def test_species_folders_may_be_named_three_ways():
+    """A folder a person types by hand should resolve without a lookup table."""
+    from training.import_folders import species_aliases, normalise
+
+    aliases = species_aliases()
+    assert aliases[normalise("lissemys_punctata")] == "lissemys_punctata"
+    assert aliases[normalise("Lissemys punctata")] == "lissemys_punctata"
+    assert aliases[normalise("Indian Flapshell Turtle")] == "lissemys_punctata"
+
+
+def test_messy_folder_names_become_usable_capture_ids():
+    from training.import_folders import capture_from_name
+    from training.ingest_field_images import capture_id_error
+
+    for messy in ("chambal aug 19", "Rescue crate #3", "  2026-08-19 (b) ", "a -- b"):
+        capture = capture_from_name(messy)
+        assert capture, f"{messy!r} produced no capture id"
+        assert "--" not in capture, f"{messy!r} -> {capture!r} would collide with the frame separator"
+        assert capture_id_error(capture) is None, f"{messy!r} -> {capture!r} rejected downstream"
+
+
+def test_capture_ids_do_not_collide_after_tidying():
+    from training.import_folders import unique_capture
+
+    taken = {"pond-b"}
+    assert unique_capture(taken, "pond-b") == "pond-b-2"
+    assert unique_capture(taken, "pond-c") == "pond-c"
+
+
+def test_each_animal_folder_is_one_capture(tmp_path):
+    """The folder is what keeps one individual out of both sides of the split."""
+    from training.import_folders import scan, species_aliases
+
+    animal = tmp_path / "lissemys_punctata" / "smoketest animal a"
+    animal.mkdir(parents=True)
+    for n in range(3):
+        (animal / f"IMG_{n}.jpg").write_bytes(b"")
+
+    plan = scan(tmp_path, species_aliases(), reimport=False)
+    assert len(plan.captures) == 1
+    species_id, capture, files, _ = plan.captures[0]
+    assert species_id == "lissemys_punctata"
+    assert capture == "smoketest-animal-a"
+    assert len(files) == 3
+
+
+def test_loose_photographs_are_separate_animals_and_are_reported(tmp_path):
+    from training.import_folders import scan, species_aliases
+
+    species_dir = tmp_path / "geochelone_elegans"
+    species_dir.mkdir(parents=True)
+    (species_dir / "smoketest-loose-one.jpg").write_bytes(b"")
+    (species_dir / "smoketest-loose-two.jpg").write_bytes(b"")
+
+    plan = scan(tmp_path, species_aliases(), reimport=False)
+    assert len(plan.captures) == 2, "loose files must not be merged into one animal"
+    assert len(plan.loose) == 2, "the guess must be reported, not made silently"
+
+
+def test_unknown_species_folder_is_refused_not_guessed(tmp_path):
+    from training.import_folders import scan, species_aliases
+
+    stray = tmp_path / "some turtle I think"
+    stray.mkdir(parents=True)
+    (stray / "a.jpg").write_bytes(b"")
+
+    plan = scan(tmp_path, species_aliases(), reimport=False)
+    assert plan.captures == []
+    assert [p.name for p in plan.unknown_folders] == ["some turtle I think"]

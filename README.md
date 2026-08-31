@@ -304,6 +304,58 @@ photographs are not re-downloaded. A record whose photograph is missing from
 the bucket is reported rather than skipped, because that combination means a
 submission was accepted and its image lost.
 
+### Dropping photographs into folders
+
+If naming a capture per animal on the command line is more bookkeeping than the
+job deserves, arrange the photographs in a file manager instead and let the
+importer do the filing:
+
+```bash
+python -m training.import_folders --setup      # one folder per species
+python -m training.import_folders --dry-run    # what would be filed
+python -m training.import_folders              # file it
+```
+
+`--setup` writes a folder per species under `incoming/`, plus a
+`WHICH-FOLDER.txt` naming each one in English. Drop photographs in, **one
+folder per animal**:
+
+```
+incoming/
+  lissemys_punctata/
+    chambal-aug-19/        <- one animal
+      IMG_0431.jpg
+      IMG_0432.jpg
+    chambal-aug-20/        <- a different animal
+      IMG_0455.jpg
+  Indian Roofed Turtle/    <- common and scientific names work too
+    rescue-crate-3/
+      a.jpg
+```
+
+The animal folder is the whole point of the layout: it is what tells
+`prepare_dataset.py` which photographs are of the same individual, and it is
+the difference between a validation number you can act on and one that measures
+whether the model recognises one turtle it has already seen. A photograph left
+loose in a species folder is filed as its own animal — right when every loose
+photograph is a different individual, wrong the moment two are not, so the
+count is reported on every run rather than assumed.
+
+A species folder whose name the database does not recognise is reported and
+skipped, with the near misses listed. Nothing is guessed at.
+
+Filing goes through the same EXIF scrubber as everything else, and re-running
+is safe: captures already in the pool are left alone, so adding another animal
+folder and running again picks up only what is new. `--reimport` replaces
+captures that are already there, for when you have corrected a folder's
+contents. `incoming/` keeps your originals and is gitignored alongside `pool/`;
+the privacy CI job fails if either is ever tracked.
+
+HEIC files are reported rather than silently dropped — Pillow cannot decode
+them without a plugin that is not in `requirements.txt`, so convert them to
+JPEG first (`sips -s format jpeg *.heic --out jpgs/` on macOS,
+`magick mogrify -format jpg *.heic` elsewhere).
+
 ### Filing field photographs as they arrive
 
 ```bash
@@ -470,6 +522,7 @@ core/records.py              atomic append-only determination log
 core/iucn.py                 Red List API v4 client, cached and offline-tolerant
 core/contributions.py        contribution intake, EXIF stripping, coordinate scrubbing
 data/traffic_2023.json       TRAFFIC 2023 crosswalk for reconciliation
+training/import_folders.py   filing from a hand-arranged folder tree
 training/train_classifier.py YOLOv8-cls training with a dataset audit
 training/calibrate.py        temperature scaling and OOD threshold fitting
 scripts/validate_db.py       schema and cross-reference validator (CI)
