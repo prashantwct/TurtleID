@@ -39,12 +39,14 @@ from config import (
     DET_CONF_THRESHOLD,
     DET_CROP_PADDING,
     MAX_NORMALISED_ENTROPY,
+    GALLERY_PATH,
     MSP_OOD_FLOOR,
     TIER_CONFIRMED,
     TIER_PROBABLE,
     TIER_TENTATIVE,
 )
 from core.database import SpeciesDB
+from core.matcher import Gallery, MatcherError, embed_images, load_backbone
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +75,7 @@ class Determination:
 
     # diagnostics for audit
     energy: float = 0.0
+    similarity: float = float("nan")   # gallery path: best cosine match
     normalised_entropy: float = 0.0
     temperature: float = 1.0
     detector_confidence: float | None = None
@@ -93,6 +96,7 @@ class Determination:
             "tier": self.tier,
             "action": self.action,
             "energy": None if math.isnan(self.energy) else round(self.energy, 4),
+            "similarity": None if math.isnan(self.similarity) else round(self.similarity, 4),
             "normalised_entropy": round(self.normalised_entropy, 4),
             "temperature": self.temperature,
             "calibrated": self.calibrated,
@@ -165,12 +169,16 @@ class ChelonidIdentifier:
         classifier_path: Path = CLASSIFIER_PATH,
         detector_path: Path = DETECTOR_PATH,
         calibration_path: Path = CALIBRATION_PATH,
+        gallery_path: Path = GALLERY_PATH,
     ):
         self.db = db
         self.classifier_path = Path(classifier_path)
         self.detector_path = Path(detector_path)
+        self.gallery_path = Path(gallery_path)
         self._classifier = None
         self._detector = None
+        self._gallery = None
+        self._embedder = None
         self._class_names: list[str] = []
         self.model_version = ""
         self._hook_handle = None
@@ -179,7 +187,8 @@ class ChelonidIdentifier:
         self.temperature = DEFAULT_TEMPERATURE
         self.energy_threshold = DEFAULT_ENERGY_THRESHOLD
         self.calibrated = False
-        self._load_calibration(Path(calibration_path))
+        if self.backend == "classifier":
+            self._load_calibration(Path(calibration_path))
 
     # -- setup ---------------------------------------------------------
     def _load_calibration(self, path: Path) -> None:
@@ -210,8 +219,23 @@ class ChelonidIdentifier:
             logger.error("Calibration file unusable (%s); falling back to defaults.", exc)
 
     @property
+    def backend(self) -> str | None:
+        """Which scorer is in force.
+
+        A trained classifier wins when both are present: it was fitted on these
+        species, where the gallery leans on features learned from ImageNet. The
+        gallery is what makes the photograph tab usable before that model
+        exists, not a fallback to prefer once it does.
+        """
+        if self.classifier_path.exists():
+            return "classifier"
+        if self.gallery_path.exists():
+            return "gallery"
+        return None
+
+    @property
     def available(self) -> bool:
-        return self.classifier_path.exists()
+        return self.backend is not None
 
     def _ensure_classifier(self):
         if self._classifier is not None:
@@ -254,6 +278,57 @@ class ChelonidIdentifier:
             logger.warning("Detector unavailable (%s); classifying full frame.", exc)
             self._detector = None
         return self._detector
+
+    def _ensure_gallery(self) -> Gallery:
+        if self._gallery is not None:
+            return self._gallery
+        if not self.gallery_path.exists():
+            raise FileNotFoundError(
+                f"No gallery at {self.gallery_path}. Build one with "
+                "training/build_gallery.py, or use the morphological key instead."
+            )
+        gallery = Gallery.load(self.gallery_path)
+
+        unknown = [n for n in gallery.classes if n not in self.db]
+        if unknown:
+            raise ValueError(
+                "Gallery species are not present in the species database: "
+                f"{unknown}. The gallery and the database are out of sync."
+            )
+
+        self._gallery = gallery
+        self._class_names = list(gallery.classes)
+        self.temperature = gallery.temperature
+        self.calibrated = gallery.calibrated
+        self.model_version = (
+            f"{self.gallery_path.name} [{gallery.backbone}, "
+            f"{gallery.vectors.shape[0]} photographs, {len(gallery.classes)} species]"
+        )
+        logger.info("Gallery loaded: %s", self.model_version)
+        return gallery
+
+    def _ensure_embedder(self):
+        if self._embedder is None:
+            gallery = self._ensure_gallery()
+            self._embedder = load_backbone(gallery.backbone)
+        return self._embedder
+
+    def _gallery_scores(self, image) -> tuple[np.ndarray, float, bool]:
+        """Probabilities over species, the best match found, and whether to reject."""
+        gallery = self._ensure_gallery()
+        model, transform = self._ensure_embedder()
+
+        vectors = embed_images([image], model, transform)
+        if vectors.size == 0:
+            raise MatcherError("The photograph could not be embedded.")
+
+        scores, best = gallery.score(vectors)
+        similarity = float(best[0])
+        return (
+            softmax(scores[0], self.temperature),
+            similarity,
+            similarity < gallery.similarity_floor,
+        )
 
     # -- pipeline ------------------------------------------------------
     def _locate(self, image) -> tuple[Any, float | None]:
@@ -360,45 +435,60 @@ class ChelonidIdentifier:
     ) -> Determination:
         """Run one identification. `image` is a PIL Image or a path."""
         cropped, det_conf = self._locate(image)
-        scores, true_logits = self._logits(cropped)
-
-        probs = softmax(scores, self.temperature)
         warnings: list[str] = []
+        energy = float("nan")
+        similarity = float("nan")
 
-        if not self.calibrated:
+        if self.backend == "gallery":
+            # No trained head, so no logits and no free energy. The gate here is
+            # the similarity to the nearest photograph in the gallery.
+            probs, similarity, reject = self._gallery_scores(cropped)
             warnings.append(
+                "Identified by matching against the reference gallery, not by a "
+                "trained model. Fine distinctions between similar species are "
+                "weaker on this path than the percentages suggest; confirm the "
+                "confusable pairs against the morphological key."
+            )
+        else:
+            scores, true_logits = self._logits(cropped)
+            probs = softmax(scores, self.temperature)
+
+            # -- out-of-distribution gate ------------------------------
+            # Free energy is only meaningful on true logits. Without them, fall
+            # back to a maximum-softmax-probability gate and say so, rather than
+            # reporting an energy value that is structurally always zero.
+            if true_logits:
+                energy = free_energy(scores, self.temperature)
+                reject = energy > self.energy_threshold
+            else:
+                reject = float(probs.max()) < MSP_OOD_FLOOR
+                warnings.append(
+                    "Raw logits were unavailable, so out-of-distribution screening "
+                    "is running in a weaker fallback mode. Off-target images are "
+                    "more likely to be given a species name."
+                )
+
+        # Determined by the backend above: the gallery reads it off the file it
+        # was built with, the classifier off calibration.json.
+        if not self.calibrated:
+            warnings.insert(0, (
                 "Model is UNCALIBRATED. Treat all probabilities as upper bounds "
                 "and confirm every determination against the morphological key."
-            )
-
-        # -- out-of-distribution gate ----------------------------------
-        # Free energy is only meaningful on true logits. Without them, fall back
-        # to a maximum-softmax-probability gate and say so, rather than reporting
-        # an energy value that is structurally always zero.
-        if true_logits:
-            energy = free_energy(scores, self.temperature)
-            reject = energy > self.energy_threshold
-        else:
-            energy = float("nan")
-            reject = float(probs.max()) < MSP_OOD_FLOOR
-            warnings.append(
-                "Raw logits were unavailable, so out-of-distribution screening "
-                "is running in a weaker fallback mode. Off-target images are "
-                "more likely to be given a species name."
-            )
+            ))
 
         if reject:
             return Determination(
                 candidates=[],
                 tier="REJECTED",
                 action=(
-                    "The image does not resemble any species this model was trained on. "
+                    f"The image does not resemble {'anything in the reference gallery' if self.backend == 'gallery' else 'any species this model was trained on'}. "
                     "Retake the photograph following the capture protocol (dorsal, "
                     "ventral, lateral, head close-up, scale reference), or use the "
                     "morphological key. If the animal is genuinely not an Indian "
                     "chelonian, this rejection is correct."
                 ),
                 energy=energy,
+                similarity=similarity,
                 temperature=self.temperature,
                 detector_confidence=det_conf,
                 calibrated=self.calibrated,
@@ -441,6 +531,7 @@ class ChelonidIdentifier:
             action=action,
             warnings=warnings,
             energy=energy,
+            similarity=similarity,
             normalised_entropy=ent,
             temperature=self.temperature,
             detector_confidence=det_conf,

@@ -78,10 +78,12 @@ Functional. Can download as JSONL for data analysis.
 
 ---
 
-## Enabling the photograph tab (requires trained model)
+## Enabling the photograph tab
 
-The photo identification tab is disabled until a trained YOLOv8 classifier is
-installed. Here's how to train one:
+The photo identification tab is disabled until either a **matching gallery** or
+a **trained classifier** is installed. The gallery takes minutes and works from
+a few photographs per species; the classifier takes hours and needs dozens of
+photographs of different animals per species. Start with the gallery.
 
 ### 1. Collect images
 
@@ -112,9 +114,32 @@ the same individual out of both halves of the validation split. Re-running is
 safe; only new folders are picked up. iPhone `.heic` files need converting to
 JPEG first, and the importer says so rather than skipping them quietly.
 
-`prepare_dataset.py` then writes the layout below for you, and its summary is
-the honest account of what you have: which classes are too thin to train, and
-which have only one animal and therefore cannot be validated at all.
+### 1b. Build the gallery — this is the short path
+
+```bash
+python -m training.build_gallery --seed-with-reference-plates
+```
+
+That is the whole thing. No training, no epochs, no GPU. It embeds every
+photograph in `pool/` plus the 28 committed reference plates, fits its own
+calibration by leave-one-capture-out, writes `models/gallery.npz`, and the
+photograph tab starts working when you restart the app.
+
+Read what it prints. Per-class recall is listed lowest first, and species with
+only one animal are named as unmeasurable — they will still be matched, but
+nothing can say how often they are right. Pass `--negatives ./negatives` (see
+below) to test the rejection gate against images with no turtle in them.
+
+Determinations from the gallery are advisory, and the app says so on every one.
+Generic image features separate a softshell from a tortoise easily but do not
+reliably separate *Pangshura tecta* from *P. smithii*, which differ in plastron
+colour — so check the confusable pairs against the morphological key.
+
+Everything from here down is the **trained classifier** path: better, slower,
+and it needs far more photographs. `prepare_dataset.py` writes the layout below
+for you, and its summary is the honest account of what you have — which classes
+are too thin to train, and which have only one animal and therefore cannot be
+validated at all.
 
 **The long way**, if you would rather assemble the splits yourself — organize by
 species id (folder names must match `data/species_db.json`):

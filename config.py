@@ -19,6 +19,7 @@ SPECIES_DB_PATH = DATA_DIR / "species_db.json"
 CLASSIFIER_PATH = MODEL_DIR / "chelonid_cls.pt"      # YOLOv8-cls weights
 DETECTOR_PATH = MODEL_DIR / "chelonid_det.pt"        # YOLOv8 detection weights (optional)
 CALIBRATION_PATH = MODEL_DIR / "calibration.json"    # temperature + energy threshold
+GALLERY_PATH = MODEL_DIR / "gallery.npz"             # embedded reference photographs
 
 # Reference photographs extracted from published identification material. The
 # manifest is tracked because it is the provenance record; the image files are
@@ -56,6 +57,26 @@ MAX_NORMALISED_ENTROPY = 0.55
 # contain an Indian chelonian at all (wrong animal, unusable photograph, a
 # species not in the training set). Calibrated on a held-out negative set.
 DEFAULT_ENERGY_THRESHOLD = -4.0
+
+# ---------------------------------------------------------------- gallery matching
+#
+# The no-training path (core/matcher.py): photographs are embedded once and a
+# new image is identified by its nearest neighbours. These govern it.
+#
+GALLERY_IMAGE_SIZE = 224      # what the ImageNet backbones were trained at
+GALLERY_NEIGHBOURS = 3        # per species, the number of best matches averaged
+
+# Below this cosine similarity to anything in the gallery, the photograph is
+# rejected as off-target — the matcher's equivalent of the free-energy gate.
+# Overwritten by the value fitted during `training/build_gallery.py`; this
+# default is deliberately permissive, because an unfitted gate that rejects
+# real animals is worse than one that lets a few through to the tiering logic.
+GALLERY_SIMILARITY_FLOOR = 0.30
+
+# Similarity scores are far narrower than logits, so the default temperature is
+# correspondingly small. Overwritten by the fitted value; until then the gallery
+# reports itself as uncalibrated and the app warns.
+GALLERY_TEMPERATURE = 0.07
 
 # Fallback gate used only when true logits cannot be captured from the model.
 # Maximum softmax probability below this is treated as out of distribution.
