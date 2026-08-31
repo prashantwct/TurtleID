@@ -85,7 +85,39 @@ installed. Here's how to train one:
 
 ### 1. Collect images
 
-Organize them by species id (folder names must match `data/species_db.json`):
+**The short way.** Let the importer build the folders, drop photographs in with
+a file manager, and let it do the filing:
+
+```bash
+python -m training.import_folders --setup      # one folder per species
+# ...drop photographs in: one folder per ANIMAL inside the species folder...
+python -m training.import_folders --dry-run    # check before writing anything
+python -m training.import_folders              # file them
+python -m training.prepare_dataset --pool ./pool --out ./dataset --force
+```
+
+```
+incoming/
+  lissemys_punctata/
+    chambal-aug-19/      <- one animal, however many photographs
+      IMG_0431.jpg
+      IMG_0432.jpg
+    chambal-aug-20/      <- a different animal
+      IMG_0455.jpg
+```
+
+Species folders can be named by id, scientific name, or English common name —
+`incoming/WHICH-FOLDER.txt` lists all three. The per-animal folder is what keeps
+the same individual out of both halves of the validation split. Re-running is
+safe; only new folders are picked up. iPhone `.heic` files need converting to
+JPEG first, and the importer says so rather than skipping them quietly.
+
+`prepare_dataset.py` then writes the layout below for you, and its summary is
+the honest account of what you have: which classes are too thin to train, and
+which have only one animal and therefore cannot be validated at all.
+
+**The long way**, if you would rather assemble the splits yourself — organize by
+species id (folder names must match `data/species_db.json`):
 
 ```
 dataset/

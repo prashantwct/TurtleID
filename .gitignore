@@ -24,3 +24,7 @@ records/
 # in EXIF and in the frame itself, and a coordinate for a nesting bank is the
 # one thing this project must not publish.
 pool/
+
+# The hand-arranged drop folder read by training/import_folders.py. These are
+# the originals, still carrying every EXIF tag their camera wrote.
+incoming/
