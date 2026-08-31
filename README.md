@@ -277,7 +277,43 @@ and a photograph that cannot be stored durably is **refused** rather than
 accepted into a directory that will not survive the week. The sidebar states
 which mode is in force.
 
-Any S3-compatible service works — AWS S3, Cloudflare R2, Backblaze B2, Wasabi,
+There are two backends. **GitHub** commits each submission to a repository, so
+review runs through the same history and pull requests as everything else:
+
+```
+CHELONID_GITHUB_REPO     required; "owner/repo". Setting it switches this on
+CHELONID_GITHUB_TOKEN    required; fine-grained, Contents:write, that repo only
+CHELONID_GITHUB_BRANCH   optional, defaults to main
+CHELONID_GITHUB_PATH     optional, defaults to submissions/
+```
+
+> **A public repository publishes every contribution, permanently.** The
+> photograph, the contributor's name and the state become world-readable the
+> moment they are submitted, and a commit cannot be withdrawn — deleting a file
+> later leaves it in the history and does nothing about copies already taken.
+> EXIF stripping and note redaction still run, and neither can do anything about
+> locality *visible in the frame*: a recognisable bank, a signboard, a number
+> plate. For a Schedule I species that is the disclosure the rest of this
+> codebase exists to prevent.
+>
+> The app checks the repository's visibility and, when it is public or cannot be
+> determined, refuses to submit without an explicit acknowledgement from the
+> contributor. **A private repository gives the identical workflow with none of
+> the exposure**, and is the right default unless publishing is a decision you
+> have taken deliberately.
+
+Submissions land as one file each, so simultaneous contributors never collide:
+
+```
+submissions/images/<species_id>_<digest>.jpg
+submissions/records/<record_id>.json
+```
+
+Commit messages carry the record id and the species only — never the
+contributor, the state, or any note.
+
+**Object storage** is the other backend, and the one that publishes nothing. Any
+S3-compatible service works — AWS S3, Cloudflare R2, Backblaze B2, Wasabi,
 MinIO. Set these in the deployment's secrets, in the environment, or in a
 gitignored `.env`:
 
@@ -289,6 +325,8 @@ CHELONID_S3_ENDPOINT     required for anything that is not AWS S3
 CHELONID_S3_REGION       optional, defaults to us-east-1
 CHELONID_S3_PREFIX       optional key prefix
 ```
+
+If both backends are configured, GitHub wins and the app says so in the log.
 
 A bucket named without credentials is treated as a misconfiguration and
 reported, not quietly ignored — that mistake otherwise looks identical to
@@ -419,6 +457,26 @@ still fires. Treat the gallery as a fast first opinion, not as the record.
 The trained classifier below is strictly better once the photographs exist to
 support it, and takes over automatically: when both `models/chelonid_cls.pt` and
 `models/gallery.npz` are present, the classifier wins.
+
+#### Getting the gallery onto a hosted deployment
+
+`models/` is gitignored, and Streamlit Community Cloud re-clones the repository
+on every restart — so a gallery built locally is invisible to the hosted app,
+which reports *Identification: not installed* however many times you rebuild.
+
+```bash
+python -m training.build_gallery --publish
+git add data/gallery.npz && git commit -m "Update the published gallery" && git push
+```
+
+`--publish` writes a second copy with the capture ids replaced by a constant.
+They exist for leave-one-capture-out, which happens at build time; identification
+never reads them, and they are the one field in the file that names places. The
+vectors, species, fitted temperature and floor all carry over, so the deployed
+app knows whether it is calibrated instead of having to assume the worst.
+
+About 7 KB per photograph. The local gallery wins wherever both exist, so
+publishing never shadows a fresher build on your own machine.
 
 ### Train and calibrate
 

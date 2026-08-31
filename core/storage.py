@@ -47,6 +47,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from config import env_value
+from core import github_storage
 
 logger = logging.getLogger(__name__)
 
@@ -115,11 +116,43 @@ def settings() -> Settings | None:
 
 def configured() -> bool:
     """Whether submissions will be stored durably. Never raises."""
+    if github_storage.configured():
+        return True
     try:
         return settings() is not None
     except StorageError as exc:
         logger.error("Durable storage is misconfigured: %s", exc)
         return False
+
+
+def _github_first(action, *args) -> str | None:
+    """Run `action` on the GitHub backend when it is the configured one.
+
+    Returns None when GitHub is not in use, so the caller falls through to S3.
+    GitHub wins if both are set: it is the more deliberate configuration, and
+    silently writing somewhere the maintainer did not intend is worse than
+    ignoring one of two answers.
+    """
+    if not github_storage.configured():
+        return None
+    try:
+        both = settings() is not None
+    except StorageError:
+        # S3 is half-configured. That is worth knowing, but it is not this
+        # submission's problem: GitHub is the backend in force.
+        both = False
+    if both:
+        logger.warning(
+            "Both GitHub and S3 contribution storage are configured. Using "
+            "GitHub; unset %s to silence this.", REPO_HINT,
+        )
+    try:
+        return action(*args)
+    except github_storage.GitHubStorageError as exc:
+        raise StorageError(str(exc)) from exc
+
+
+REPO_HINT = github_storage.REPO_ENV
 
 
 def client(config: Settings | None = None):
@@ -147,11 +180,17 @@ def client(config: Settings | None = None):
 
 def put_image(filename: str, data: bytes, *, s3=None, config: Settings | None = None) -> str:
     """Store a photograph. Returns its key. Raises StorageError on failure."""
+    committed = _github_first(github_storage.put_image, filename, data)
+    if committed is not None:
+        return committed
     return _put(f"{IMAGE_PREFIX}{filename}", data, "image/jpeg", s3=s3, config=config)
 
 
 def put_record(record: dict[str, Any], *, s3=None, config: Settings | None = None) -> str:
     """Store a contribution record. Returns its key."""
+    committed = _github_first(github_storage.put_record, record)
+    if committed is not None:
+        return committed
     body = json.dumps(record, ensure_ascii=False, indent=2).encode("utf-8")
     return _put(f"{RECORD_PREFIX}{record['id']}.json", body, "application/json",
                 s3=s3, config=config)
@@ -205,11 +244,16 @@ def fetch(key: str, *, s3=None, config: Settings | None = None) -> bytes:
 
 def describe() -> str:
     """One line for the UI. Never raises, never prints a credential."""
+    if github_storage.configured():
+        return f"GitHub {github_storage.describe()}"
     try:
         config = settings()
     except StorageError as exc:
         return f"misconfigured — {exc}"
     if config is None:
+        github_state = github_storage.describe()
+        if github_state.startswith("misconfigured"):
+            return github_state
         return "local only"
     where = config.endpoint or "AWS S3"
     return f"{config.bucket} at {where}"

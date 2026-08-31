@@ -34,7 +34,8 @@ from core.contributions import (
 )
 from core.database import SpeciesDB, SpeciesDBError
 from core.iucn import IUCNClient, compare_with_local
-from core.inference import ChelonidIdentifier
+from core import github_storage
+from core.inference import STALE_BACKEND, ChelonidIdentifier, backend_of
 from core.morphkey import CHARACTERS, most_discriminating, run_key
 from core.plates import coverage as plate_coverage, plates_for
 from core import storage
@@ -347,6 +348,18 @@ def legal_footer() -> None:
 def tab_identify() -> None:
     st.subheader("Photograph identification")
 
+    backend = backend_of(IDENTIFIER)
+    if backend == STALE_BACKEND:
+        st.error(
+            "**This app is running code from before the last update.** The "
+            "identification pipeline was reloaded but the process was not "
+            "restarted, so what is in memory and what is on disk disagree.\n\n"
+            "Reboot the app — on Streamlit Cloud, **Manage app → Reboot** in the "
+            "lower right; locally, stop and restart `streamlit run app.py`. The "
+            "**Morphological key** tab works regardless."
+        )
+        return
+
     if not IDENTIFIER.available:
         st.error(
             "**Nothing is installed to identify photographs with.** Use the "
@@ -380,7 +393,7 @@ def tab_identify() -> None:
             )
         return
 
-    if IDENTIFIER.backend == "gallery":
+    if backend == "gallery":
         st.info(
             "Running on the **matching gallery**, not a trained model. "
             "Determinations are advisory: confirm anything that matters against "
@@ -695,6 +708,39 @@ def tab_records() -> None:
     )
 
 
+def publication_notice() -> str | None:
+    """The warning owed to a contributor, or None when nothing is published.
+
+    Only the GitHub backend publishes. A private repository needs no notice; a
+    public one, or one whose visibility could not be established, does — an
+    unanswered visibility check is treated as public, because the cost of being
+    wrong runs one way only.
+    """
+    if not github_storage.configured():
+        return None
+    visible = github_storage.is_public()
+    if visible is False:
+        return None
+    hedge = "" if visible else (
+        "\n\nThe repository's visibility could not be checked just now, so this "
+        "is written assuming the worst case."
+    )
+    return (
+        "**Photographs submitted here are published publicly and permanently.** "
+        "They are committed to a public GitHub repository, where anyone can see "
+        "and download them, along with the name you enter and the state you "
+        "select. A commit cannot be withdrawn: deleting a file later leaves it "
+        "in the repository's history and does nothing about copies already "
+        "taken.\n\n"
+        "EXIF coordinates are still stripped and typed coordinates still "
+        "redacted — but that cannot help with locality **visible in the frame**: "
+        "a recognisable bank, a signboard, a number plate. For a Schedule I "
+        "species that is a poaching risk.\n\n"
+        "Do not submit a photograph you would not put on a public website."
+        + hedge
+    )
+
+
 def tab_contribute() -> None:
     st.subheader("Contribute")
     st.markdown(
@@ -708,6 +754,9 @@ def tab_contribute() -> None:
         "A coordinate for a *Batagur kachuga* nesting bank is a poaching risk, "
         "and the model does not need one to learn."
     )
+    _notice = publication_notice()
+    if _notice:
+        st.error(_notice)
 
     what = st.radio(
         "What are you contributing?",
@@ -720,7 +769,7 @@ def tab_contribute() -> None:
     )
 
     if what == "image":
-        _contribute_image(contributor)
+        _contribute_image(contributor, _notice)
     else:
         _contribute_proposal(what, contributor)
 
@@ -733,7 +782,7 @@ def tab_contribute() -> None:
             col.metric(CONTRIBUTION_KINDS.get(kind, kind), n)
 
 
-def _contribute_image(contributor: str) -> None:
+def _contribute_image(contributor: str, notice: str | None) -> None:
     coverage = image_coverage(DB.ids)
     thin = sorted(
         ((n, sid) for sid, n in coverage.items() if n < 30),
@@ -795,7 +844,21 @@ def _contribute_image(contributor: str) -> None:
         return
 
     st.image(raw, width=320)
-    if st.button("Submit photograph", type="primary"):
+
+    # Where submissions are published, consent is a precondition of the button
+    # rather than a line of small print above it.
+    acknowledged = True
+    if notice:
+        acknowledged = st.checkbox(
+            "I understand this photograph, my name and the state will be "
+            "published publicly and permanently, and I have checked that the "
+            "image itself does not reveal the locality.",
+            key="contrib_publication_consent",
+        )
+
+    if st.button("Submit photograph", type="primary", disabled=not acknowledged):
+        if not acknowledged:
+            return
         try:
             record = submit_image(
                 raw, species_id=species_id, view=view, state=state,
@@ -805,6 +868,12 @@ def _contribute_image(contributor: str) -> None:
             st.error(str(exc))
             return
         st.success(f"Received. Reference {record['id']}.")
+        if record.get("stored_key") and notice:
+            st.info(
+                f"Published at `{record['stored_key']}`. If this was a mistake, "
+                "tell the maintainer now — removing it from a repository's "
+                "history is only realistic before it spreads."
+            )
         if record["exif_gps_present_and_removed"]:
             st.warning(
                 "This photograph carried GPS coordinates in its metadata. They "
@@ -891,14 +960,21 @@ st.caption(
 with st.sidebar:
     st.markdown("### Status")
     st.markdown(f"- Reference database: **{len(DB)} taxa**")
+    _backend = backend_of(IDENTIFIER)
     _backend_label = {
         "classifier": "**trained classifier**",
         "gallery": "**matching gallery**",
+        STALE_BACKEND: "**unknown — restart required**",
         None: "**not installed**",
-    }[IDENTIFIER.backend]
+    }.get(_backend, "**not installed**")
     st.markdown(f"- Identification: {_backend_label}")
-    if IDENTIFIER.backend == "gallery":
+    if _backend == "gallery":
         st.caption("No trained model; matching against embedded photographs.")
+    elif _backend == STALE_BACKEND:
+        st.caption(
+            "This app is still running code from before the last update. "
+            "Reboot it — on Streamlit Cloud, **Manage app → Reboot**."
+        )
     st.markdown(f"- Calibration: {'**applied**' if IDENTIFIER.calibrated else '**none**'}")
     if IDENTIFIER.calibrated:
         st.caption(f"T = {IDENTIFIER.temperature:.3f}")

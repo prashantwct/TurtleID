@@ -292,6 +292,33 @@ class Gallery:
                 metrics=meta.get("metrics", {}),
             )
 
+    def published(self) -> "Gallery":
+        """A copy safe to commit: capture ids replaced with a constant.
+
+        Capture ids exist for leave-one-capture-out, which happens at build
+        time. Identification never reads them. They are also the one field here
+        that carries locality — an id like `chambal-2026-08-19` names a river —
+        so publishing keeps the vectors and the species and drops them.
+
+        The fitted temperature, floor and metrics are kept: a deployment that
+        could not tell whether its gallery was calibrated would have to assume
+        the worst and warn on every determination.
+        """
+        clone = Gallery(
+            vectors=self.vectors,
+            species=self.species,
+            captures=np.full(len(self.captures), "unpublished"),
+            classes=list(self.classes),
+            backbone=self.backbone,
+            neighbours=self.neighbours,
+            temperature=self.temperature,
+            similarity_floor=self.similarity_floor,
+            calibrated=self.calibrated,
+            metrics=dict(self.metrics),
+        )
+        clone.metrics["published"] = True
+        return clone
+
     # -- querying ------------------------------------------------------
     @property
     def keys(self) -> np.ndarray:
