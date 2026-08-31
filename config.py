@@ -21,6 +21,13 @@ DETECTOR_PATH = MODEL_DIR / "chelonid_det.pt"        # YOLOv8 detection weights 
 CALIBRATION_PATH = MODEL_DIR / "calibration.json"    # temperature + energy threshold
 GALLERY_PATH = MODEL_DIR / "gallery.npz"             # embedded reference photographs
 
+# A gallery built with `--publish`: capture ids stripped, so it carries no
+# locality and can be tracked. models/ is gitignored, which is right for a
+# working gallery and wrong for the one a hosted deployment needs — Streamlit
+# Cloud re-clones the repository on every restart and can only see what is
+# committed. The local gallery wins when both exist.
+PUBLISHED_GALLERY_PATH = DATA_DIR / "gallery.npz"
+
 # Reference photographs extracted from published identification material. The
 # manifest is tracked because it is the provenance record; the image files are
 # not, because their copyright sits with the photographers and publishers named

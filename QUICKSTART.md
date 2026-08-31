@@ -120,6 +120,15 @@ JPEG first, and the importer says so rather than skipping them quietly.
 python -m training.build_gallery --seed-with-reference-plates
 ```
 
+Deploying to Streamlit Cloud? Add `--publish` and commit what it writes —
+`models/` is gitignored, so the hosted app cannot see a gallery you only built
+locally, and reports *Identification: not installed* until you push one:
+
+```bash
+python -m training.build_gallery --seed-with-reference-plates --publish
+git add data/gallery.npz && git commit -m "Update the published gallery" && git push
+```
+
 That is the whole thing. No training, no epochs, no GPU. It embeds every
 photograph in `pool/` plus the 28 committed reference plates, fits its own
 calibration by leave-one-capture-out, writes `models/gallery.npz`, and the

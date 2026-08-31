@@ -41,6 +41,7 @@ from config import (
     MAX_NORMALISED_ENTROPY,
     GALLERY_PATH,
     MSP_OOD_FLOOR,
+    PUBLISHED_GALLERY_PATH,
     TIER_CONFIRMED,
     TIER_PROBABLE,
     TIER_TENTATIVE,
@@ -194,11 +195,13 @@ class ChelonidIdentifier:
         detector_path: Path = DETECTOR_PATH,
         calibration_path: Path = CALIBRATION_PATH,
         gallery_path: Path = GALLERY_PATH,
+        published_gallery_path: Path = PUBLISHED_GALLERY_PATH,
     ):
         self.db = db
         self.classifier_path = Path(classifier_path)
         self.detector_path = Path(detector_path)
         self.gallery_path = Path(gallery_path)
+        self.published_gallery_path = Path(published_gallery_path)
         self._classifier = None
         self._detector = None
         self._gallery = None
@@ -253,8 +256,23 @@ class ChelonidIdentifier:
         """
         if self.classifier_path.exists():
             return "classifier"
-        if self.gallery_path.exists():
+        if self.active_gallery_path is not None:
             return "gallery"
+        return None
+
+    @property
+    def active_gallery_path(self) -> Path | None:
+        """The gallery in force, or None.
+
+        A locally built gallery wins over the committed one: it is the newer of
+        the two by construction, since publishing is a step you take after
+        building. The committed fallback is what makes the photograph tab work
+        on a hosted deployment, which re-clones the repository on every restart
+        and never sees the gitignored one.
+        """
+        for path in (self.gallery_path, self.published_gallery_path):
+            if path.exists():
+                return path
         return None
 
     @property
@@ -306,12 +324,14 @@ class ChelonidIdentifier:
     def _ensure_gallery(self) -> Gallery:
         if self._gallery is not None:
             return self._gallery
-        if not self.gallery_path.exists():
+        path = self.active_gallery_path
+        if path is None:
             raise FileNotFoundError(
-                f"No gallery at {self.gallery_path}. Build one with "
-                "training/build_gallery.py, or use the morphological key instead."
+                f"No gallery at {self.gallery_path} or {self.published_gallery_path}. "
+                "Build one with training/build_gallery.py, or use the "
+                "morphological key instead."
             )
-        gallery = Gallery.load(self.gallery_path)
+        gallery = Gallery.load(path)
 
         unknown = [n for n in gallery.classes if n not in self.db]
         if unknown:
@@ -325,7 +345,7 @@ class ChelonidIdentifier:
         self.temperature = gallery.temperature
         self.calibrated = gallery.calibrated
         self.model_version = (
-            f"{self.gallery_path.name} [{gallery.backbone}, "
+            f"{path.name} [{gallery.backbone}, "
             f"{gallery.vectors.shape[0]} photographs, {len(gallery.classes)} species]"
         )
         logger.info("Gallery loaded: %s", self.model_version)

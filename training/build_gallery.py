@@ -58,6 +58,7 @@ from config import (  # noqa: E402
     ALLOWED_SUFFIXES,
     GALLERY_NEIGHBOURS,
     GALLERY_PATH,
+    PUBLISHED_GALLERY_PATH,
     REFERENCE_IMAGE_DIR,
     REFERENCE_MANIFEST,
     SPECIES_DB_PATH,
@@ -318,6 +319,23 @@ def build(args: argparse.Namespace) -> None:
     )
     logger.info("The photograph tab will use this. Run `streamlit run app.py`.")
 
+    if args.publish:
+        gallery.published().save(args.publish_to)
+        logger.info(
+            "Wrote %s for committing — same vectors, capture ids removed. "
+            "A hosted deployment can only see what is in the repository, so "
+            "commit this one and push:",
+            args.publish_to,
+        )
+        logger.info("    git add %s && git commit -m 'Update the published gallery'",
+                    args.publish_to)
+        logger.warning(
+            "Committing it publishes which species you hold photographs of and "
+            "how many. That is in the repository already by way of the "
+            "contribution counts; the capture ids, which name places, are not "
+            "and do not go in."
+        )
+
 
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__.split("\n")[1])
@@ -334,6 +352,9 @@ def main() -> None:
     p.add_argument("--batch", type=int, default=16)
     p.add_argument("--fpr", type=float, default=0.05,
                    help="Target false-rejection rate for the similarity floor")
+    p.add_argument("--publish", action="store_true",
+                   help="Also write a committable copy with capture ids stripped")
+    p.add_argument("--publish-to", type=Path, default=PUBLISHED_GALLERY_PATH)
     build(p.parse_args())
 
 

@@ -580,7 +580,8 @@ def test_identifier_prefers_a_trained_model_over_a_gallery(tmp_path):
     def identifier():
         return ChelonidIdentifier(db, classifier_path=weights,
                                   calibration_path=tmp_path / "none.json",
-                                  gallery_path=gallery)
+                                  gallery_path=gallery,
+                                  published_gallery_path=tmp_path / "none.npz")
 
     assert identifier().backend is None
     gallery.write_bytes(b"")
@@ -610,7 +611,147 @@ def test_backend_of_reads_a_current_identifier(tmp_path):
         classifier_path=tmp_path / "none.pt",
         calibration_path=tmp_path / "none.json",
         gallery_path=gallery,
+        published_gallery_path=tmp_path / "none.npz",
     )
     assert backend_of(identifier) is None
     gallery.write_bytes(b"")
     assert backend_of(identifier) == "gallery"
+
+
+# --------------------------------------------------------------- publishing
+
+def test_publishing_a_gallery_drops_the_capture_ids():
+    """Capture ids name places. Identification never reads them."""
+    gallery = _toy_gallery()
+    gallery.temperature = 0.03
+    gallery.similarity_floor = 0.5
+    gallery.calibrated = True
+
+    published = gallery.published()
+
+    assert set(published.captures) == {"unpublished"}
+    assert "a" not in set(published.captures) and "b" not in set(published.captures)
+    assert np.array_equal(published.vectors, gallery.vectors)
+    assert list(published.species) == list(gallery.species)
+    assert published.calibrated and published.temperature == pytest.approx(0.03)
+    assert published.similarity_floor == pytest.approx(0.5)
+    assert published.metrics["published"] is True
+    assert set(gallery.captures) == {"a", "b"}, "the original must not be mutated"
+
+
+def test_a_published_gallery_serves_a_deployment_with_no_local_one(tmp_path):
+    from core.database import SpeciesDB
+    from core.inference import ChelonidIdentifier
+
+    local, published = tmp_path / "gallery.npz", tmp_path / "published.npz"
+
+    def identifier():
+        return ChelonidIdentifier(
+            SpeciesDB.load(),
+            classifier_path=tmp_path / "none.pt",
+            calibration_path=tmp_path / "none.json",
+            gallery_path=local,
+            published_gallery_path=published,
+        )
+
+    assert identifier().backend is None
+
+    published.write_bytes(b"")
+    assert identifier().backend == "gallery"
+    assert identifier().active_gallery_path == published
+
+    local.write_bytes(b"")
+    assert identifier().active_gallery_path == local, "a local build is the newer one"
+
+
+# --------------------------------------------------------------- github storage
+
+def test_github_storage_is_off_unless_a_repo_is_named(monkeypatch):
+    from core import github_storage
+
+    monkeypatch.delenv("CHELONID_GITHUB_REPO", raising=False)
+    monkeypatch.delenv("CHELONID_GITHUB_TOKEN", raising=False)
+    assert github_storage.settings() is None
+    assert github_storage.configured() is False
+
+
+def test_a_repo_without_a_token_is_reported_not_ignored(monkeypatch):
+    """The mistake otherwise looks identical to working, until the first restart."""
+    from core import github_storage
+
+    monkeypatch.setenv("CHELONID_GITHUB_REPO", "owner/repo")
+    monkeypatch.delenv("CHELONID_GITHUB_TOKEN", raising=False)
+
+    with pytest.raises(github_storage.GitHubStorageError):
+        github_storage.settings()
+    assert github_storage.configured() is False
+    assert github_storage.describe().startswith("misconfigured")
+
+
+def test_a_malformed_repo_name_is_refused(monkeypatch):
+    from core import github_storage
+
+    monkeypatch.setenv("CHELONID_GITHUB_TOKEN", "t")
+    for bad in ("not-a-repo", "too/many/parts", "owner/", "/repo"):
+        monkeypatch.setenv("CHELONID_GITHUB_REPO", bad)
+        with pytest.raises(github_storage.GitHubStorageError):
+            github_storage.settings()
+
+
+def test_github_settings_normalise_the_path_and_default_the_branch(monkeypatch):
+    from core import github_storage
+
+    monkeypatch.setenv("CHELONID_GITHUB_REPO", "owner/repo")
+    monkeypatch.setenv("CHELONID_GITHUB_TOKEN", "t")
+    monkeypatch.setenv("CHELONID_GITHUB_PATH", "/field/photos")
+    monkeypatch.delenv("CHELONID_GITHUB_BRANCH", raising=False)
+
+    config = github_storage.settings()
+    assert config.path == "field/photos/"
+    assert config.branch == "main"
+    assert config.path_for("images/x.jpg") == "field/photos/images/x.jpg"
+
+
+def test_the_github_description_never_carries_the_token(monkeypatch):
+    from core import github_storage
+
+    monkeypatch.setenv("CHELONID_GITHUB_REPO", "owner/repo")
+    monkeypatch.setenv("CHELONID_GITHUB_TOKEN", "ghp_secret_value")
+    config = github_storage.settings()
+
+    assert "ghp_secret_value" not in config.public_description
+    assert "ghp_secret_value" not in repr(config.public_description)
+
+
+def test_github_errors_explain_themselves_without_echoing_the_response(monkeypatch):
+    import urllib.error
+
+    from core import github_storage
+
+    monkeypatch.setenv("CHELONID_GITHUB_REPO", "owner/repo")
+    monkeypatch.setenv("CHELONID_GITHUB_TOKEN", "ghp_secret_value")
+    config = github_storage.settings()
+
+    for code, expected in ((403, "Contents:write"), (404, "not found"),
+                           (409, "does not exist"), (422, "already"), (429, "rate-limit")):
+        error = urllib.error.HTTPError("u", code, "msg", {}, None)
+        message = github_storage._explain(error, config, "submissions/images/x.jpg")
+        assert expected in message
+        assert "ghp_secret_value" not in message
+
+
+def test_storage_prefers_github_and_translates_its_errors(monkeypatch):
+    """contributions.py only knows StorageError; the backend must not leak through."""
+    from core import github_storage, storage
+
+    monkeypatch.setenv("CHELONID_GITHUB_REPO", "owner/repo")
+    monkeypatch.setenv("CHELONID_GITHUB_TOKEN", "t")
+    monkeypatch.delenv("CHELONID_S3_BUCKET", raising=False)
+    assert storage.configured() is True
+
+    def explode(*_args, **_kwargs):
+        raise github_storage.GitHubStorageError("commit refused")
+
+    monkeypatch.setattr(github_storage, "put_image", explode)
+    with pytest.raises(storage.StorageError, match="commit refused"):
+        storage.put_image("x.jpg", b"data")
