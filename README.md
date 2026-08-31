@@ -32,7 +32,10 @@ Order of work:
 1. Deploy today with the **morphological key** and **species reference**. These
    are useful immediately and need nothing but Python.
 2. Collect images (below). This is the long pole — budget months, not weeks.
-3. Train, calibrate, then enable the photograph tab.
+3. Build a **matching gallery** as soon as the first photographs exist. No
+   training, minutes to run, and it improves every time a photograph is added.
+4. Train a classifier once there are dozens of photographs of *different animals*
+   per species, calibrate it, and it takes over the photograph tab.
 
 ---
 
@@ -378,7 +381,51 @@ Species ids are checked against the database on the way in. A photograph filed
 under a name the database does not know becomes a class the model can emit and
 the app cannot resolve.
 
+### Building the matching gallery (no training)
+
+```bash
+python -m training.build_gallery --seed-with-reference-plates
+python -m training.build_gallery --negatives ./negatives
+```
+
+This is the path that works on the day the first photographs arrive. Every
+photograph in `pool/` is passed once through an ImageNet-pretrained backbone and
+stored as a vector; a new photograph is identified by finding its nearest
+neighbours and reading off which species they belong to. There is no training
+step, no epochs and no train/validation split, and it runs on a laptop CPU in
+minutes. Adding photographs means running it again — the gallery *is* the model.
+
+**What replaces the validation split** is leave-one-capture-out. Every
+photograph is scored against the gallery with every photograph of its own animal
+removed, which answers the question that matters: would this have been
+identified from *other* animals of the species? That held-out score is what fits
+the temperature and the similarity floor, so the same guarantees hold as on the
+trained path — a reported 80% should be right about 80% of the time, and a
+photograph resembling nothing in the gallery is rejected rather than named.
+
+It reports honestly on its own limits. Species with only one animal in the
+gallery are listed as unmeasurable: they can still be matched, and a single
+reference plate is genuinely useful, but nothing can say how often they are
+right. Per-class recall is printed, lowest first, because overall accuracy on a
+set this imbalanced tells you almost nothing.
+
+**What it cannot do.** ImageNet features separate a softshell from a tortoise
+easily. They do not reliably separate *Pangshura tecta* from *P. smithii*, which
+differ in plastron colour — coral-red versus dark-blotched, and the difference
+between Schedule I and Schedule II. The app labels every gallery determination
+as advisory and points at the morphological key, and the confusable-pair warning
+still fires. Treat the gallery as a fast first opinion, not as the record.
+
+The trained classifier below is strictly better once the photographs exist to
+support it, and takes over automatically: when both `models/chelonid_cls.pt` and
+`models/gallery.npz` are present, the classifier wins.
+
 ### Train and calibrate
+
+The second path, and the better one once the photographs exist: dozens per
+species, across different animals. Until then `prepare_dataset.py` will tell you
+the dataset cannot be validated, and that assessment is not pessimism — a model
+fitted to a handful of images reports confident numbers that mean nothing.
 
 ```bash
 python -m training.train_classifier --data ./dataset --epochs 120
@@ -522,7 +569,9 @@ core/records.py              atomic append-only determination log
 core/iucn.py                 Red List API v4 client, cached and offline-tolerant
 core/contributions.py        contribution intake, EXIF stripping, coordinate scrubbing
 data/traffic_2023.json       TRAFFIC 2023 crosswalk for reconciliation
+core/matcher.py              gallery embedding and nearest-neighbour matching
 training/import_folders.py   filing from a hand-arranged folder tree
+training/build_gallery.py    gallery build, leave-one-capture-out fitting
 training/train_classifier.py YOLOv8-cls training with a dataset audit
 training/calibrate.py        temperature scaling and OOD threshold fitting
 scripts/validate_db.py       schema and cross-reference validator (CI)

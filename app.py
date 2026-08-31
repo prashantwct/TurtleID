@@ -349,21 +349,44 @@ def tab_identify() -> None:
 
     if not IDENTIFIER.available:
         st.error(
-            "**No trained model is installed.** The identification pipeline needs "
-            "`models/chelonid_cls.pt`. Until it exists, use the **Morphological "
-            "key** tab — it is fully functional and does not depend on the model."
+            "**Nothing is installed to identify photographs with.** Use the "
+            "**Morphological key** tab — it is fully functional and depends on "
+            "neither a model nor a gallery."
         )
-        with st.expander("How to get a model in place"):
+        with st.expander("Two ways to change that"):
             st.markdown(
-                "1. Collect and label images by species id (see README).\n"
-                "2. `python -m training.train_classifier --data ./dataset`\n"
-                "3. `python -m training.calibrate --data ./dataset "
-                "--negatives ./negatives`\n"
-                "4. Restart this app.\n\n"
-                "Step 3 is not optional. An uncalibrated model reports confident "
-                "numbers that are not confidence."
+                "**Matching gallery — minutes, no training, works from a few "
+                "photographs per species.** Every photograph is embedded once "
+                "and a new one is identified by its nearest neighbours.\n\n"
+                "```\n"
+                "python -m training.import_folders --setup\n"
+                "# drop photographs in: one folder per animal\n"
+                "python -m training.import_folders\n"
+                "python -m training.build_gallery --seed-with-reference-plates\n"
+                "```\n\n"
+                "It is weaker on the confusable pairs — *Pangshura tecta* against "
+                "*P. smithii* turns on plastron colour, which generic features "
+                "barely see — so it stays advisory and defers to the key.\n\n"
+                "**Trained classifier — hours, and needs dozens of photographs of "
+                "different animals per species.** Better discrimination once the "
+                "photographs exist.\n\n"
+                "```\n"
+                "python -m training.prepare_dataset --pool ./pool --out ./dataset\n"
+                "python -m training.train_classifier --data ./dataset\n"
+                "python -m training.calibrate --data ./dataset --negatives ./negatives\n"
+                "```\n\n"
+                "Calibration is not optional on either path. An uncalibrated "
+                "model reports confident numbers that are not confidence."
             )
         return
+
+    if IDENTIFIER.backend == "gallery":
+        st.info(
+            "Running on the **matching gallery**, not a trained model. "
+            "Determinations are advisory: confirm anything that matters against "
+            "the morphological key, and treat the confusable pairs as unresolved "
+            "until you have checked the discriminating character yourself."
+        )
 
     if not IDENTIFIER.calibrated:
         st.warning(
@@ -868,7 +891,14 @@ st.caption(
 with st.sidebar:
     st.markdown("### Status")
     st.markdown(f"- Reference database: **{len(DB)} taxa**")
-    st.markdown(f"- Model: {'**loaded**' if IDENTIFIER.available else '**not installed**'}")
+    _backend_label = {
+        "classifier": "**trained classifier**",
+        "gallery": "**matching gallery**",
+        None: "**not installed**",
+    }[IDENTIFIER.backend]
+    st.markdown(f"- Identification: {_backend_label}")
+    if IDENTIFIER.backend == "gallery":
+        st.caption("No trained model; matching against embedded photographs.")
     st.markdown(f"- Calibration: {'**applied**' if IDENTIFIER.calibrated else '**none**'}")
     if IDENTIFIER.calibrated:
         st.caption(f"T = {IDENTIFIER.temperature:.3f}")

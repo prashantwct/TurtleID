@@ -12,6 +12,7 @@ data/iucn_cache.json
 dataset/
 logs/
 models/*.pt
+models/*.npz
 models/calibration.json
 models/runs/
 negatives/

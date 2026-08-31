@@ -452,3 +452,138 @@ def test_unknown_species_folder_is_refused_not_guessed(tmp_path):
     plan = scan(tmp_path, species_aliases(), reimport=False)
     assert plan.captures == []
     assert [p.name for p in plan.unknown_folders] == ["some turtle I think"]
+
+
+# --------------------------------------------------------------- gallery matching
+
+def _toy_gallery():
+    """Three species, two captures each, in a space where the axes are species."""
+    from core.matcher import Gallery, normalise_rows
+
+    vectors, species, captures = [], [], []
+    for axis, species_id in enumerate(("lissemys_punctata", "pangshura_tecta",
+                                       "geochelone_elegans")):
+        # Two animals per species, tilted differently off the species axis, so
+        # frames of one animal really are closer to each other than to the other
+        # animal's — which is the situation leave-one-capture-out exists for.
+        for capture, tilt in (("a", 0.05), ("b", 0.40)):
+            for frame in (0, 1):
+                vector = np.zeros(3)
+                vector[axis] = 1.0
+                vector[(axis + 1) % 3] = tilt
+                vector[(axis + 2) % 3] = 0.01 * frame
+                vectors.append(vector)
+                species.append(species_id)
+                captures.append(capture)
+    return Gallery(
+        vectors=normalise_rows(np.array(vectors, dtype=np.float32)),
+        species=np.array(species),
+        captures=np.array(captures),
+        classes=sorted(set(species)),
+    )
+
+
+def test_species_score_is_the_mean_of_the_best_matches():
+    from core.matcher import ABSENT, species_scores
+
+    similarities = np.array([[0.9, 0.8, 0.1, 0.2]])
+    entry_species = np.array(["a", "a", "b", "b"])
+    scores = species_scores(similarities, entry_species, ["a", "b", "c"], neighbours=2)
+
+    assert scores[0][0] == pytest.approx(0.85)   # mean of 0.9 and 0.8
+    assert scores[0][1] == pytest.approx(0.15)
+    assert scores[0][2] == ABSENT, "a species with nothing in the gallery cannot win"
+
+
+def test_gallery_identifies_a_held_out_capture():
+    gallery = _toy_gallery()
+    query = gallery.vectors[:1]
+    scores, best = gallery.score(query)
+
+    assert gallery.classes[int(scores.argmax())] == "lissemys_punctata"
+    assert best[0] == pytest.approx(1.0, abs=1e-5)
+
+
+def test_leave_one_capture_out_excludes_the_same_animal():
+    """The whole point: a photograph must not be identified by its own animal."""
+    gallery = _toy_gallery()
+    query = gallery.vectors[:1]
+    key = gallery.keys[0]
+
+    similarities = query @ gallery.vectors.T
+    _, best_without = gallery.score(query, exclude_keys=[key])
+
+    same_capture = gallery.keys == key
+    assert same_capture.sum() == 2, "fixture should hold two frames of this animal"
+    # The excluded frames were the best matches; the best remaining one is not.
+    assert best_without[0] < similarities[0][same_capture].max()
+    assert best_without[0] == pytest.approx(similarities[0][~same_capture].max(), abs=1e-6)
+
+
+def test_leave_one_out_never_matches_across_species_by_capture_name():
+    """Capture ids repeat between species; masking must not reach into another."""
+    gallery = _toy_gallery()
+    keys = gallery.keys
+    assert (keys == "lissemys_punctata/a").sum() == 2
+    assert (keys == "pangshura_tecta/a").sum() == 2, "same capture name, different species"
+
+    _, best = gallery.score(gallery.vectors[:1], exclude_keys=["lissemys_punctata/a"])
+    assert best[0] > 0.0, "masking one species' capture must leave the others intact"
+
+
+def test_temperature_fitting_improves_likelihood():
+    from core.inference import softmax
+    from core.matcher import fit_temperature
+
+    scores = np.array([[0.90, 0.60, 0.55], [0.85, 0.50, 0.45], [0.40, 0.88, 0.30]])
+    labels = np.array([0, 0, 1])
+
+    fitted = fit_temperature(scores, labels)
+
+    def nll(temperature):
+        return -np.mean([np.log(softmax(r, temperature)[l]) for r, l in zip(scores, labels)])
+
+    assert 0.0 < fitted <= 1.05
+    assert nll(fitted) < nll(1.0), "fitting must beat the uncalibrated default"
+
+
+def test_gallery_survives_a_save_and_load(tmp_path):
+    gallery = _toy_gallery()
+    gallery.temperature = 0.042
+    gallery.similarity_floor = 0.61
+    gallery.calibrated = True
+    gallery.metrics = {"accuracy": 0.75}
+
+    path = tmp_path / "gallery.npz"
+    gallery.save(path)
+
+    from core.matcher import Gallery
+    loaded = Gallery.load(path)
+    assert loaded.classes == gallery.classes
+    assert loaded.temperature == pytest.approx(0.042)
+    assert loaded.similarity_floor == pytest.approx(0.61)
+    assert loaded.calibrated is True
+    assert loaded.metrics["accuracy"] == 0.75
+    assert np.allclose(loaded.vectors, gallery.vectors)
+    assert list(loaded.species) == list(gallery.species)
+
+
+def test_identifier_prefers_a_trained_model_over_a_gallery(tmp_path):
+    """A gallery makes the tab usable early; it must not shadow a real model."""
+    from core.database import SpeciesDB
+    from core.inference import ChelonidIdentifier
+
+    weights = tmp_path / "chelonid_cls.pt"
+    gallery = tmp_path / "gallery.npz"
+    db = SpeciesDB.load()
+
+    def identifier():
+        return ChelonidIdentifier(db, classifier_path=weights,
+                                  calibration_path=tmp_path / "none.json",
+                                  gallery_path=gallery)
+
+    assert identifier().backend is None
+    gallery.write_bytes(b"")
+    assert identifier().backend == "gallery"
+    weights.write_bytes(b"")
+    assert identifier().backend == "classifier"
