@@ -34,7 +34,7 @@ from core.contributions import (
 )
 from core.database import SpeciesDB, SpeciesDBError
 from core.iucn import IUCNClient, compare_with_local
-from core.inference import ChelonidIdentifier
+from core.inference import STALE_BACKEND, ChelonidIdentifier, backend_of
 from core.morphkey import CHARACTERS, most_discriminating, run_key
 from core.plates import coverage as plate_coverage, plates_for
 from core import storage
@@ -347,6 +347,18 @@ def legal_footer() -> None:
 def tab_identify() -> None:
     st.subheader("Photograph identification")
 
+    backend = backend_of(IDENTIFIER)
+    if backend == STALE_BACKEND:
+        st.error(
+            "**This app is running code from before the last update.** The "
+            "identification pipeline was reloaded but the process was not "
+            "restarted, so what is in memory and what is on disk disagree.\n\n"
+            "Reboot the app — on Streamlit Cloud, **Manage app → Reboot** in the "
+            "lower right; locally, stop and restart `streamlit run app.py`. The "
+            "**Morphological key** tab works regardless."
+        )
+        return
+
     if not IDENTIFIER.available:
         st.error(
             "**Nothing is installed to identify photographs with.** Use the "
@@ -380,7 +392,7 @@ def tab_identify() -> None:
             )
         return
 
-    if IDENTIFIER.backend == "gallery":
+    if backend == "gallery":
         st.info(
             "Running on the **matching gallery**, not a trained model. "
             "Determinations are advisory: confirm anything that matters against "
@@ -891,14 +903,21 @@ st.caption(
 with st.sidebar:
     st.markdown("### Status")
     st.markdown(f"- Reference database: **{len(DB)} taxa**")
+    _backend = backend_of(IDENTIFIER)
     _backend_label = {
         "classifier": "**trained classifier**",
         "gallery": "**matching gallery**",
+        STALE_BACKEND: "**unknown — restart required**",
         None: "**not installed**",
-    }[IDENTIFIER.backend]
+    }.get(_backend, "**not installed**")
     st.markdown(f"- Identification: {_backend_label}")
-    if IDENTIFIER.backend == "gallery":
+    if _backend == "gallery":
         st.caption("No trained model; matching against embedded photographs.")
+    elif _backend == STALE_BACKEND:
+        st.caption(
+            "This app is still running code from before the last update. "
+            "Reboot it — on Streamlit Cloud, **Manage app → Reboot**."
+        )
     st.markdown(f"- Calibration: {'**applied**' if IDENTIFIER.calibrated else '**none**'}")
     if IDENTIFIER.calibrated:
         st.caption(f"T = {IDENTIFIER.temperature:.3f}")

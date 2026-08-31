@@ -50,6 +50,30 @@ from core.matcher import Gallery, MatcherError, embed_images, load_backbone
 
 logger = logging.getLogger(__name__)
 
+# Returned by `backend_of` when the identifier predates the code asking. See
+# there for why that happens.
+STALE_BACKEND = "stale"
+
+
+def backend_of(identifier) -> str | None:
+    """Which scorer an identifier is using, tolerating one built by older code.
+
+    Streamlit re-executes its script when the source changes but does not
+    re-import modules already in `sys.modules`, and `@st.cache_resource` hands
+    back the object it built earlier — from the class as it was then. So after
+    an update to this file, a long-running app can hold an identifier that
+    predates `backend` entirely, and reading it raises AttributeError from
+    somewhere that looks unrelated.
+
+    Only restarting the process fixes it. Reporting STALE_BACKEND lets the
+    caller say that plainly instead of taking the whole app down over a status
+    line, and keeps the mistake from being read as "no model installed".
+    """
+    try:
+        return identifier.backend
+    except AttributeError:
+        return STALE_BACKEND
+
 
 # ====================================================================== results
 

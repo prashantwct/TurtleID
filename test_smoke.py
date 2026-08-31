@@ -587,3 +587,30 @@ def test_identifier_prefers_a_trained_model_over_a_gallery(tmp_path):
     assert identifier().backend == "gallery"
     weights.write_bytes(b"")
     assert identifier().backend == "classifier"
+
+
+def test_a_stale_identifier_is_reported_not_raised():
+    """Streamlit can hand back an identifier built before this module changed."""
+    from core.inference import STALE_BACKEND, backend_of
+
+    class FromAnOlderVersion:
+        available = False
+        calibrated = False
+
+    assert backend_of(FromAnOlderVersion()) == STALE_BACKEND
+
+
+def test_backend_of_reads_a_current_identifier(tmp_path):
+    from core.database import SpeciesDB
+    from core.inference import ChelonidIdentifier, backend_of
+
+    gallery = tmp_path / "gallery.npz"
+    identifier = ChelonidIdentifier(
+        SpeciesDB.load(),
+        classifier_path=tmp_path / "none.pt",
+        calibration_path=tmp_path / "none.json",
+        gallery_path=gallery,
+    )
+    assert backend_of(identifier) is None
+    gallery.write_bytes(b"")
+    assert backend_of(identifier) == "gallery"
