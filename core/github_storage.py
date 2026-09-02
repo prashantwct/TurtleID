@@ -81,6 +81,27 @@ class GitHubStorageError(Exception):
     """A commit that was expected to happen did not."""
 
 
+# Prefixes GitHub issues today. An unrecognised one is reported, never refused:
+# the list changes, and refusing a valid token would be the worse failure.
+TOKEN_PREFIXES = ("ghp_", "github_pat_", "gho_", "ghu_", "ghs_", "ghr_")
+
+
+def normalise_token(raw: str) -> str:
+    """Strip what a copy-and-paste adds around a token.
+
+    `config.env_value` removes surrounding quotes from a value in `.env` but
+    not from an environment variable, and a deployment's secrets arrive as
+    environment variables. A token carrying its own quote marks is sent
+    verbatim and comes back 401 — indistinguishable, from the error alone,
+    from a revoked one.
+    """
+    token = raw.strip()
+    for quote in ('"', "'"):
+        if len(token) >= 2 and token.startswith(quote) and token.endswith(quote):
+            token = token[1:-1].strip()
+    return token
+
+
 @dataclass(frozen=True)
 class Settings:
     token: str
@@ -120,6 +141,12 @@ def settings() -> Settings | None:
             f"{REPO_ENV} is set but {TOKEN_ENV} is not. Set a fine-grained token "
             f"with Contents:write on {repo}, or unset {REPO_ENV} to fall back to "
             f"local-only storage."
+        )
+    token = normalise_token(token)
+    if not token:
+        raise GitHubStorageError(
+            f"{TOKEN_ENV} is set but contains nothing usable once quotes and "
+            f"whitespace are removed."
         )
 
     path = (env_value(PATH_ENV) or DEFAULT_PATH).lstrip("/")
@@ -180,11 +207,19 @@ def _explain(exc: urllib.error.HTTPError, config: Settings, path: str) -> str:
     The response body is read but never echoed verbatim: it can repeat request
     headers, and one of those is the token.
     """
-    if exc.code in (401, 403):
+    if exc.code == 401:
         return (
-            f"GitHub refused the token ({exc.code}). It needs Contents:write on "
-            f"{config.repo}; a fine-grained token also has to list that "
-            f"repository explicitly, and an expired one fails the same way."
+            f"GitHub does not recognise the token (401 Bad credentials). This is "
+            f"the token value itself, not its permissions: it has been revoked, "
+            f"has expired, or was copied incompletely. Issue a new one and paste "
+            f"the whole value — GitHub shows it once, at creation. "
+            f"Run `python -m scripts.check_github_storage` to confirm."
+        )
+    if exc.code == 403:
+        return (
+            f"GitHub refused the token (403 Forbidden). It authenticates, but it "
+            f"lacks permission: it needs Contents:write on {config.repo}, and a "
+            f"fine-grained token has to list that repository explicitly."
         )
     if exc.code == 404:
         return (
@@ -270,6 +305,86 @@ def is_public(refresh: bool = False) -> bool | None:
     if verdict is not None:
         _VISIBILITY_CACHE[config.repo] = verdict
     return verdict
+
+
+def check() -> list[tuple[str, bool | None, str]]:
+    """Diagnose the configuration without writing anything.
+
+    Returns (label, ok, detail) rows. `ok` is None where a question could not
+    be answered. Nothing is committed: a write test would leave a stray file in
+    the repository, and the three questions below — is the token recognised, can
+    it see the repository, can it push — separate every failure this backend
+    produces.
+    """
+    rows: list[tuple[str, bool | None, str]] = []
+
+    try:
+        config = settings()
+    except GitHubStorageError as exc:
+        return [("Configuration", False, str(exc))]
+    if config is None:
+        return [("Configuration", False,
+                 f"{REPO_ENV} is not set, so contributions stay on local disk.")]
+
+    rows.append(("Configuration", True,
+                 f"{config.repo}, branch {config.branch}, path {config.path}"))
+
+    prefix = next((p for p in TOKEN_PREFIXES if config.token.startswith(p)), None)
+    rows.append((
+        "Token shape",
+        prefix is not None,
+        f"{len(config.token)} characters, recognised prefix {prefix!r}" if prefix
+        else f"{len(config.token)} characters, no recognised GitHub prefix — "
+             f"check the whole value was pasted, and that no quotes crept in",
+    ))
+
+    identity = _get("/user", config)
+    if identity is None:
+        rows.append(("Token authenticates", False,
+                     "GitHub returned 401. The token is revoked, expired, or "
+                     "incomplete. Issue a new one — permissions are not the issue."))
+        return rows
+    rows.append(("Token authenticates", True,
+                 f"acting as {identity.get('login', 'unknown')}"))
+
+    repo = _get(f"/repos/{config.repo}", config)
+    if repo is None:
+        rows.append(("Repository visible", False,
+                     f"{config.repo} is not visible to this token. Either the "
+                     f"name is wrong, or a fine-grained token does not list it "
+                     f"under Repository access."))
+        return rows
+    rows.append(("Repository visible", True,
+                 "public" if not repo.get("private", True) else "private"))
+
+    can_push = bool(repo.get("permissions", {}).get("push"))
+    rows.append((
+        "Write permission", can_push,
+        "Contents:write present" if can_push else
+        "read-only. A fine-grained token needs Repository permissions -> "
+        "Contents: Read and write; a classic token needs the 'repo' scope.",
+    ))
+
+    branch = _get(f"/repos/{config.repo}/branches/{config.branch}", config)
+    rows.append((
+        "Branch exists", branch is not None,
+        f"{config.branch} found" if branch is not None
+        else f"{config.branch!r} not found in {config.repo}",
+    ))
+    return rows
+
+
+def _get(path: str, config: Settings) -> dict | None:
+    """One authenticated GET. None on any failure; the caller says what that means."""
+    request = urllib.request.Request(f"{API_ROOT}{path}")
+    request.add_header("Authorization", f"Bearer {config.token}")
+    request.add_header("Accept", "application/vnd.github+json")
+    request.add_header("X-GitHub-Api-Version", API_VERSION)
+    try:
+        with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except (urllib.error.HTTPError, urllib.error.URLError, ValueError, OSError):
+        return None
 
 
 def describe() -> str:
