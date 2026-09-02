@@ -332,13 +332,23 @@ A bucket named without credentials is treated as a misconfiguration and
 reported, not quietly ignored — that mistake otherwise looks identical to
 working correctly, right up until the first restart.
 
-Then pull what has been submitted and promote it:
+Then take up what has been submitted and promote it:
 
 ```bash
+git pull                                        # GitHub backend: this IS the download
 python -m training.pull_contributions --list
 python -m training.pull_contributions
 python -m training.promote_contributions --list
+python -m training.promote_contributions --accept <id>
+python -m training.build_gallery --publish      # fold them into the gallery
 ```
+
+With the GitHub backend there is nothing to fetch — `git pull` has already
+brought every submission into the working tree, and `pull_contributions` copies
+them out of `submissions/` into the local layout the rest of the pipeline reads.
+It picks that route automatically when GitHub is configured or a `submissions/`
+directory is present; `--from-repo` forces it, `--submissions` points it
+elsewhere. With object storage it downloads, as before.
 
 Pulling is idempotent: records already present locally are left alone and their
 photographs are not re-downloaded. A record whose photograph is missing from

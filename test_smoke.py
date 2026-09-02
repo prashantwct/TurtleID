@@ -755,3 +755,118 @@ def test_storage_prefers_github_and_translates_its_errors(monkeypatch):
     monkeypatch.setattr(github_storage, "put_image", explode)
     with pytest.raises(storage.StorageError, match="commit refused"):
         storage.put_image("x.jpg", b"data")
+
+
+def test_committed_submissions_are_taken_up_from_the_working_tree(tmp_path, monkeypatch):
+    """With the GitHub backend there is nothing to download; git pull did it."""
+    import argparse
+    import json
+
+    from core import contributions
+    from training import pull_contributions
+
+    submissions = tmp_path / "submissions"
+    (submissions / "records").mkdir(parents=True)
+    (submissions / "images").mkdir(parents=True)
+    (submissions / "images" / "lissemys_punctata_ff.jpg").write_bytes(b"jpeg")
+    (submissions / "records" / "abc123.json").write_text(json.dumps({
+        "id": "abc123", "kind": "image", "species_id": "lissemys_punctata",
+        "contributor": "RO Churna", "certainty": "confident",
+        "image_file": "lissemys_punctata_ff.jpg", "status": "pending",
+    }), encoding="utf-8")
+
+    contrib_dir = tmp_path / "contributions"
+    image_dir = contrib_dir / "images"
+    monkeypatch.setattr(pull_contributions, "CONTRIB_DIR", contrib_dir)
+    monkeypatch.setattr(pull_contributions, "IMAGE_DIR", image_dir)
+    monkeypatch.setattr(pull_contributions, "PROPOSAL_FILE", contrib_dir / "proposals.jsonl")
+    monkeypatch.setattr(pull_contributions, "local_record_ids", lambda: set())
+
+    args = argparse.Namespace(list=False, from_repo=True, submissions=submissions)
+    pull_contributions.pull(args)
+
+    assert (image_dir / "lissemys_punctata_ff.jpg").read_bytes() == b"jpeg"
+    written = (contrib_dir / "proposals.jsonl").read_text(encoding="utf-8").strip()
+    assert json.loads(written)["id"] == "abc123"
+
+
+def test_taking_up_submissions_twice_adds_nothing(tmp_path, monkeypatch):
+    import argparse
+    import json
+
+    from training import pull_contributions
+
+    submissions = tmp_path / "submissions"
+    (submissions / "records").mkdir(parents=True)
+    (submissions / "images").mkdir(parents=True)
+    (submissions / "records" / "abc123.json").write_text(
+        json.dumps({"id": "abc123", "species_id": "lissemys_punctata"}), encoding="utf-8")
+
+    contrib_dir = tmp_path / "contributions"
+    monkeypatch.setattr(pull_contributions, "CONTRIB_DIR", contrib_dir)
+    monkeypatch.setattr(pull_contributions, "IMAGE_DIR", contrib_dir / "images")
+    monkeypatch.setattr(pull_contributions, "PROPOSAL_FILE", contrib_dir / "proposals.jsonl")
+    monkeypatch.setattr(pull_contributions, "local_record_ids", lambda: {"abc123"})
+
+    args = argparse.Namespace(list=False, from_repo=True, submissions=submissions)
+    pull_contributions.pull(args)
+
+    assert not (contrib_dir / "proposals.jsonl").exists(), "a known record must not be re-appended"
+
+
+def test_a_missing_submissions_directory_says_to_git_pull(tmp_path):
+    import argparse
+
+    from training import pull_contributions
+
+    args = argparse.Namespace(list=False, from_repo=True, submissions=tmp_path / "nothing")
+    with pytest.raises(SystemExit, match="git pull"):
+        pull_contributions.pull(args)
+
+
+def test_a_storage_reason_reaches_the_contributor(monkeypatch, tmp_path):
+    """"Please try again" hides the one line that says what to fix."""
+    from core import contributions, storage
+
+    # Pillow is not installed in CI, and this test is about the error path, not
+    # about encoding: stand in for the scrubber rather than skipping the test.
+    monkeypatch.setattr(contributions, "strip_exif", lambda data: (b"jpeg-bytes", False))
+    monkeypatch.setattr(storage, "configured", lambda: True)
+    monkeypatch.setattr(storage, "put_image", lambda *a, **k: (_ for _ in ()).throw(
+        storage.StorageError("GitHub refused the token (403). It needs Contents:write")))
+    monkeypatch.setattr(contributions, "IMAGE_DIR", tmp_path / "images")
+
+    with pytest.raises(contributions.ContributionError) as caught:
+        contributions.submit_image(
+            b"raw", species_id="lissemys_punctata", view="dorsal",
+            state=None, contributor="RO", certainty="confident",
+        )
+    assert "Contents:write" in str(caught.value)
+    assert "403" in str(caught.value)
+
+
+def test_a_credential_never_reaches_the_contributor(monkeypatch):
+    from core import storage
+
+    monkeypatch.setenv("CHELONID_GITHUB_TOKEN", "ghp_supersecrettokenvalue")
+    monkeypatch.setenv("CHELONID_S3_SECRET_KEY", "s3secretkeyvalue12345")
+
+    leaky = storage.StorageError(
+        "rejected: token=ghp_supersecrettokenvalue key=s3secretkeyvalue12345"
+    )
+    cleaned = storage.safe_reason(leaky)
+
+    assert "ghp_supersecrettokenvalue" not in cleaned
+    assert "s3secretkeyvalue12345" not in cleaned
+    assert cleaned.count("<redacted>") == 2
+
+
+def test_scrubbing_leaves_an_ordinary_message_intact(monkeypatch):
+    from core import storage
+
+    monkeypatch.delenv("CHELONID_GITHUB_TOKEN", raising=False)
+    monkeypatch.delenv("CHELONID_S3_SECRET_KEY", raising=False)
+    monkeypatch.delenv("CHELONID_S3_ACCESS_KEY", raising=False)
+
+    message = "GitHub reports owner/repo as not found (404)."
+    assert storage.safe_reason(storage.StorageError(message)) == message

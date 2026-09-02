@@ -169,10 +169,16 @@ def submit_image(
             stored_key = storage.put_image(target.name, clean_bytes)
         except storage.StorageError as exc:
             logger.error("Durable storage rejected a contribution: %s", exc)
+            # The reason is the whole point: it names what a maintainer has to
+            # fix. Logging it and showing "please try again" sends someone to
+            # hunt through deployment logs for a line already in hand.
             raise ContributionError(
                 "This photograph could not be stored and has not been kept. "
-                "Nothing has been lost from your device — please try again, and "
-                "tell the maintainer if it keeps failing."
+                "Nothing has been lost from your device.\n\n"
+                f"**Reason:** {storage.safe_reason(exc)}\n\n"
+                "If you maintain this deployment, that line says what to change. "
+                "Otherwise please pass it on — retrying will not help until it "
+                "is fixed."
             ) from exc
 
     target.write_bytes(clean_bytes)
