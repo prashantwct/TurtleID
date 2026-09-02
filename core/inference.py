@@ -56,6 +56,48 @@ logger = logging.getLogger(__name__)
 STALE_BACKEND = "stale"
 
 
+def backend_summary(identifier) -> str:
+    """One line naming what is actually loaded, or "" when nothing is.
+
+    A deployment that has just been given a new gallery looks identical to one
+    still running the old one, and the question "is it using my photographs
+    yet" has no answer anywhere on screen. Reading the counts off the file that
+    is loaded answers it: the number moves when a rebuild lands, and does not
+    when a restart has been forgotten.
+
+    Never raises. A gallery that cannot be read is a caption that says so, not
+    a page that fails to render.
+    """
+    try:
+        backend = backend_of(identifier)
+        if backend == "classifier":
+            return identifier.classifier_path.name
+        if backend != "gallery":
+            return ""
+        gallery = identifier._ensure_gallery()
+    except Exception as exc:  # noqa: BLE001 - a status line must not take the page down
+        logger.warning("Could not summarise the identification backend: %s", exc)
+        return "could not be read"
+
+    return (
+        f"{gallery.vectors.shape[0]} photographs, {len(gallery.classes)} species"
+    )
+
+
+def gallery_species_counts(identifier) -> dict[str, int]:
+    """Photographs per species in the loaded gallery, or {} if unavailable."""
+    try:
+        if backend_of(identifier) != "gallery":
+            return {}
+        gallery = identifier._ensure_gallery()
+    except Exception:  # noqa: BLE001 - diagnostics must never be load-bearing
+        return {}
+    counts: dict[str, int] = {}
+    for species_id in gallery.species:
+        counts[str(species_id)] = counts.get(str(species_id), 0) + 1
+    return counts
+
+
 def backend_of(identifier) -> str | None:
     """Which scorer an identifier is using, tolerating one built by older code.
 

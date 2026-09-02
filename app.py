@@ -35,7 +35,13 @@ from core.contributions import (
 from core.database import SpeciesDB, SpeciesDBError
 from core.iucn import IUCNClient, compare_with_local
 from core import github_storage
-from core.inference import STALE_BACKEND, ChelonidIdentifier, backend_of
+from core.inference import (
+    STALE_BACKEND,
+    ChelonidIdentifier,
+    backend_of,
+    backend_summary,
+    gallery_species_counts,
+)
 from core.morphkey import CHARACTERS, most_discriminating, run_key
 from core.plates import coverage as plate_coverage, plates_for
 from core import storage
@@ -969,7 +975,21 @@ with st.sidebar:
     }.get(_backend, "**not installed**")
     st.markdown(f"- Identification: {_backend_label}")
     if _backend == "gallery":
-        st.caption("No trained model; matching against embedded photographs.")
+        # The counts are the only way to tell a deployment that has picked up a
+        # rebuilt gallery from one still serving the previous one from memory.
+        st.caption(f"Matching against {backend_summary(IDENTIFIER)}.")
+        _counts = gallery_species_counts(IDENTIFIER)
+        if _counts:
+            with st.expander("What is in the gallery"):
+                st.caption(
+                    "Photographs per species. A species gains entries when "
+                    "contributions are promoted and the gallery is rebuilt "
+                    "with `python -m training.build_gallery --publish`."
+                )
+                for _sid, _n in sorted(_counts.items(), key=lambda kv: (-kv[1], kv[0])):
+                    _sp = DB.get(_sid) if _sid in DB else None
+                    _name = _sp.scientific_name if _sp else _sid
+                    st.markdown(f"- *{_name}* — {_n}")
     elif _backend == STALE_BACKEND:
         st.caption(
             "This app is still running code from before the last update. "
