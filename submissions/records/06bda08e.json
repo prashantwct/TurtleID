@@ -1,0 +1,18 @@
+{
+  "id": "06bda08e",
+  "kind": "image",
+  "submitted_utc": "2026-09-02T09:15:09+00:00",
+  "app_version": "1.0.0",
+  "contributor": "anonymous",
+  "species_id": "geoclemys_hamiltonii",
+  "certainty": "verified",
+  "view": "ventral (plastron)",
+  "state": null,
+  "image_hash": "9bab9586dd873d2b",
+  "image_file": "geoclemys_hamiltonii_9bab9586dd873d2b.jpg",
+  "notes": "",
+  "exif_gps_present_and_removed": true,
+  "redactions": [],
+  "status": "pending",
+  "stored_key": "submissions/images/geoclemys_hamiltonii_9bab9586dd873d2b.jpg"
+}
