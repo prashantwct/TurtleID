@@ -983,3 +983,34 @@ def test_check_never_prints_the_token(monkeypatch):
 
     rendered = " ".join(f"{label} {detail}" for label, _, detail in github_storage.check())
     assert "supersecretvalue" not in rendered
+
+
+# --------------------------------------------------------------- promotion bar
+
+def test_verified_photographs_are_promotable():
+    """`verified` is the top of the scale; testing == 'confident' refused the best."""
+    from training.promote_contributions import certain_enough
+
+    assert certain_enough("verified") is True
+    assert certain_enough("confident") is True
+
+
+def test_uncertain_photographs_are_held():
+    from training.promote_contributions import certain_enough
+
+    assert certain_enough("probable") is False
+    assert certain_enough("possible") is False
+    assert certain_enough("unidentified") is False
+    assert certain_enough(None) is False
+    assert certain_enough("") is False
+
+
+def test_the_promotion_bar_sits_on_the_scale_the_app_offers():
+    """If the tab's options and this order drift apart, promotion silently changes."""
+    from training.promote_contributions import CERTAINTY_ORDER, MINIMUM_CERTAINTY
+
+    assert MINIMUM_CERTAINTY in CERTAINTY_ORDER
+    # The order the Contribute tab presents, weakest to strongest.
+    assert CERTAINTY_ORDER == ("possible", "probable", "confident", "verified")
+    above = CERTAINTY_ORDER[CERTAINTY_ORDER.index(MINIMUM_CERTAINTY):]
+    assert above == ("confident", "verified"), "everything at or above the bar promotes"
