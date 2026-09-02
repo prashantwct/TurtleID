@@ -1,0 +1,18 @@
+{
+  "id": "31b030f8",
+  "kind": "image",
+  "submitted_utc": "2026-09-02T09:18:15+00:00",
+  "app_version": "1.0.0",
+  "contributor": "anonymous",
+  "species_id": "geochelone_elegans",
+  "certainty": "verified",
+  "view": "ventral (plastron)",
+  "state": null,
+  "image_hash": "a89e1b40d5e583bd",
+  "image_file": "geochelone_elegans_a89e1b40d5e583bd.jpg",
+  "notes": "",
+  "exif_gps_present_and_removed": true,
+  "redactions": [],
+  "status": "pending",
+  "stored_key": "submissions/images/geochelone_elegans_a89e1b40d5e583bd.jpg"
+}
