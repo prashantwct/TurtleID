@@ -1,0 +1,18 @@
+{
+  "id": "58f70d32",
+  "kind": "image",
+  "submitted_utc": "2026-09-02T09:10:25+00:00",
+  "app_version": "1.0.0",
+  "contributor": "anonymous",
+  "species_id": "pangshura_tecta",
+  "certainty": "verified",
+  "view": "lateral profile",
+  "state": null,
+  "image_hash": "676ae188b9745da6",
+  "image_file": "pangshura_tecta_676ae188b9745da6.jpg",
+  "notes": "",
+  "exif_gps_present_and_removed": true,
+  "redactions": [],
+  "status": "pending",
+  "stored_key": "submissions/images/pangshura_tecta_676ae188b9745da6.jpg"
+}
