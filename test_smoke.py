@@ -1014,3 +1014,95 @@ def test_the_promotion_bar_sits_on_the_scale_the_app_offers():
     assert CERTAINTY_ORDER == ("possible", "probable", "confident", "verified")
     above = CERTAINTY_ORDER[CERTAINTY_ORDER.index(MINIMUM_CERTAINTY):]
     assert above == ("confident", "verified"), "everything at or above the bar promotes"
+
+
+# --------------------------------------------------------------- what is loaded
+
+def test_the_summary_names_what_is_loaded(tmp_path):
+    """Without counts on screen, a stale deployment looks like a fresh one."""
+    from core.database import SpeciesDB
+    from core.inference import ChelonidIdentifier, backend_summary
+    from core.matcher import Gallery, normalise_rows
+
+    path = tmp_path / "gallery.npz"
+    Gallery(
+        vectors=normalise_rows(np.eye(3, dtype=np.float32)),
+        species=np.array(["lissemys_punctata", "lissemys_punctata", "pangshura_tecta"]),
+        captures=np.array(["a", "a", "b"]),
+        classes=["lissemys_punctata", "pangshura_tecta"],
+    ).save(path)
+
+    identifier = ChelonidIdentifier(
+        SpeciesDB.load(),
+        classifier_path=tmp_path / "none.pt",
+        calibration_path=tmp_path / "none.json",
+        gallery_path=path,
+        published_gallery_path=tmp_path / "none.npz",
+    )
+    assert backend_summary(identifier) == "3 photographs, 2 species"
+
+
+def test_the_summary_survives_an_unreadable_gallery(tmp_path):
+    from core.database import SpeciesDB
+    from core.inference import ChelonidIdentifier, backend_summary
+
+    broken = tmp_path / "gallery.npz"
+    broken.write_bytes(b"not an npz")
+
+    identifier = ChelonidIdentifier(
+        SpeciesDB.load(),
+        classifier_path=tmp_path / "none.pt",
+        calibration_path=tmp_path / "none.json",
+        gallery_path=broken,
+        published_gallery_path=tmp_path / "none.npz",
+    )
+    assert backend_summary(identifier) == "could not be read"
+
+
+def test_the_summary_is_empty_when_nothing_is_installed(tmp_path):
+    from core.database import SpeciesDB
+    from core.inference import ChelonidIdentifier, backend_summary
+
+    identifier = ChelonidIdentifier(
+        SpeciesDB.load(),
+        classifier_path=tmp_path / "none.pt",
+        calibration_path=tmp_path / "none.json",
+        gallery_path=tmp_path / "none.npz",
+        published_gallery_path=tmp_path / "also-none.npz",
+    )
+    assert backend_summary(identifier) == ""
+
+
+def test_species_counts_show_where_contributions_landed(tmp_path):
+    from core.database import SpeciesDB
+    from core.inference import ChelonidIdentifier, gallery_species_counts
+    from core.matcher import Gallery, normalise_rows
+
+    path = tmp_path / "gallery.npz"
+    Gallery(
+        vectors=normalise_rows(np.eye(4, dtype=np.float32)),
+        species=np.array(["geoclemys_hamiltonii"] * 3 + ["pangshura_tecta"]),
+        captures=np.array(["a", "a", "a", "b"]),
+        classes=["geoclemys_hamiltonii", "pangshura_tecta"],
+    ).save(path)
+
+    identifier = ChelonidIdentifier(
+        SpeciesDB.load(),
+        classifier_path=tmp_path / "none.pt",
+        calibration_path=tmp_path / "none.json",
+        gallery_path=path,
+        published_gallery_path=tmp_path / "none.npz",
+    )
+    assert gallery_species_counts(identifier) == {
+        "geoclemys_hamiltonii": 3, "pangshura_tecta": 1,
+    }
+
+
+def test_a_stale_identifier_yields_no_summary_rather_than_raising():
+    from core.inference import backend_summary, gallery_species_counts
+
+    class FromAnOlderVersion:
+        available = False
+
+    assert backend_summary(FromAnOlderVersion()) == ""
+    assert gallery_species_counts(FromAnOlderVersion()) == {}

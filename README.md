@@ -504,6 +504,12 @@ app knows whether it is calibrated instead of having to assume the worst.
 About 7 KB per photograph. The local gallery wins wherever both exist, so
 publishing never shadows a fresher build on your own machine.
 
+**Restart after publishing.** Streamlit caches the identifier and does not
+re-import modules on a source change, so a deployment given a new gallery keeps
+serving the one already in memory until the process restarts. The sidebar states
+how many photographs the *loaded* gallery holds, which is how you tell the two
+apart: if the count has not moved after a rebuild, the app has not restarted.
+
 ### Train and calibrate
 
 The second path, and the better one once the photographs exist: dozens per
