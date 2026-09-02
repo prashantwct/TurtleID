@@ -326,6 +326,22 @@ CHELONID_S3_REGION       optional, defaults to us-east-1
 CHELONID_S3_PREFIX       optional key prefix
 ```
 
+Check it without submitting a photograph:
+
+```bash
+python -m scripts.check_github_storage
+```
+
+It asks the four questions that separate every failure this backend produces —
+is the token one GitHub recognises, can it see the repository, may it push, does
+the branch exist — and writes nothing. The token is never printed, only its
+length and prefix, which is what tells a truncated paste from a revoked token.
+
+The two failures worth telling apart: **401** means the token value itself is
+wrong (revoked, expired, or incompletely copied) and permissions are not
+involved; **403** means it authenticates but lacks Contents:write. Secrets are
+read once at startup, so reboot after changing one.
+
 If both backends are configured, GitHub wins and the app says so in the log.
 
 A bucket named without credentials is treated as a misconfiguration and

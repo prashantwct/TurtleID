@@ -72,6 +72,21 @@ def slug(text: str) -> str:
     return SLUG_RE.sub("-", text.lower()).strip("-") or "anonymous"
 
 
+# The scale the Contribute tab offers, weakest first. Promotion needs a
+# determination the contributor stood behind, which is `confident` or better —
+# not `confident` exactly. `verified` means a specialist or a vouchered record
+# confirmed it, and holding those back refused the best evidence in the pool.
+CERTAINTY_ORDER = ("possible", "probable", "confident", "verified")
+MINIMUM_CERTAINTY = "confident"
+
+
+def certain_enough(certainty: str | None) -> bool:
+    """Whether a contributor's stated certainty clears the bar for promotion."""
+    if certainty not in CERTAINTY_ORDER:
+        return False
+    return CERTAINTY_ORDER.index(certainty) >= CERTAINTY_ORDER.index(MINIMUM_CERTAINTY)
+
+
 def known_species_ids() -> set[str]:
     db = json.loads(SPECIES_DB_PATH.read_text(encoding="utf-8"))
     return {sp["id"] for sp in db["species"]}
@@ -117,7 +132,7 @@ def show_list(records: list[dict], ledger: dict[str, str]) -> None:
             promoted += 1
             continue
         species_id = record.get("species_id")
-        if species_id not in known or record.get("certainty") != "confident":
+        if species_id not in known or not certain_enough(record.get("certainty")):
             blocked += 1
             logger.info(
                 "  %-10s HELD    %-28s %s",
@@ -152,7 +167,7 @@ def promote(records: list[dict], ledger: dict[str, str], args) -> None:
             continue
         if record.get("species_id") not in known:
             continue
-        if record.get("certainty") != "confident":
+        if not certain_enough(record.get("certainty")):
             continue
         if args.accept_all_confident or record["id"] in set(args.accept):
             chosen.append(record)
@@ -206,7 +221,8 @@ def main() -> None:
     p.add_argument("--accept", action="append", default=[],
                    help="Contribution id to promote; repeatable")
     p.add_argument("--accept-all-confident", action="store_true",
-                   help="Promote every named, confident, unpromoted image")
+                   help="Promote every named, unpromoted image submitted as "
+                        "confident or better")
     p.add_argument("--capture-suffix", default=None,
                    help="Distinguish a second animal from the same contributor on the same day")
     args = p.parse_args()
