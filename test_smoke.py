@@ -822,3 +822,51 @@ def test_a_missing_submissions_directory_says_to_git_pull(tmp_path):
     args = argparse.Namespace(list=False, from_repo=True, submissions=tmp_path / "nothing")
     with pytest.raises(SystemExit, match="git pull"):
         pull_contributions.pull(args)
+
+
+def test_a_storage_reason_reaches_the_contributor(monkeypatch, tmp_path):
+    """"Please try again" hides the one line that says what to fix."""
+    from core import contributions, storage
+
+    # Pillow is not installed in CI, and this test is about the error path, not
+    # about encoding: stand in for the scrubber rather than skipping the test.
+    monkeypatch.setattr(contributions, "strip_exif", lambda data: (b"jpeg-bytes", False))
+    monkeypatch.setattr(storage, "configured", lambda: True)
+    monkeypatch.setattr(storage, "put_image", lambda *a, **k: (_ for _ in ()).throw(
+        storage.StorageError("GitHub refused the token (403). It needs Contents:write")))
+    monkeypatch.setattr(contributions, "IMAGE_DIR", tmp_path / "images")
+
+    with pytest.raises(contributions.ContributionError) as caught:
+        contributions.submit_image(
+            b"raw", species_id="lissemys_punctata", view="dorsal",
+            state=None, contributor="RO", certainty="confident",
+        )
+    assert "Contents:write" in str(caught.value)
+    assert "403" in str(caught.value)
+
+
+def test_a_credential_never_reaches_the_contributor(monkeypatch):
+    from core import storage
+
+    monkeypatch.setenv("CHELONID_GITHUB_TOKEN", "ghp_supersecrettokenvalue")
+    monkeypatch.setenv("CHELONID_S3_SECRET_KEY", "s3secretkeyvalue12345")
+
+    leaky = storage.StorageError(
+        "rejected: token=ghp_supersecrettokenvalue key=s3secretkeyvalue12345"
+    )
+    cleaned = storage.safe_reason(leaky)
+
+    assert "ghp_supersecrettokenvalue" not in cleaned
+    assert "s3secretkeyvalue12345" not in cleaned
+    assert cleaned.count("<redacted>") == 2
+
+
+def test_scrubbing_leaves_an_ordinary_message_intact(monkeypatch):
+    from core import storage
+
+    monkeypatch.delenv("CHELONID_GITHUB_TOKEN", raising=False)
+    monkeypatch.delenv("CHELONID_S3_SECRET_KEY", raising=False)
+    monkeypatch.delenv("CHELONID_S3_ACCESS_KEY", raising=False)
+
+    message = "GitHub reports owner/repo as not found (404)."
+    assert storage.safe_reason(storage.StorageError(message)) == message

@@ -242,6 +242,35 @@ def fetch(key: str, *, s3=None, config: Settings | None = None) -> bytes:
         raise StorageError(f"Could not fetch {key}: {exc}") from exc
 
 
+def _credential_values() -> list[str]:
+    """Every configured secret, so a message can be checked against them."""
+    values = []
+    for key in (github_storage.TOKEN_ENV, ACCESS_KEY_ENV, SECRET_KEY_ENV):
+        try:
+            values.append(env_value(key))
+        except Exception:  # noqa: BLE001 - reading config must never raise here
+            continue
+    return [v for v in values if v]
+
+
+def safe_reason(exc: Exception) -> str:
+    """An error message with any configured credential removed.
+
+    Storage errors are worth showing a contributor: they say what a maintainer
+    has to fix, and a submission failing for an unstated reason is the thing
+    that gets reported as "it just doesn't work". But a message assembled from
+    a provider's response can quote what was sent, so anything matching a
+    credential this app holds is taken out before it reaches a screen.
+    """
+    text = str(exc)
+    for secret in _credential_values():
+        # Short values are not credentials worth matching; they would redact
+        # ordinary words out of the message and make it unreadable.
+        if len(secret) >= 8:
+            text = text.replace(secret, "<redacted>")
+    return text
+
+
 def describe() -> str:
     """One line for the UI. Never raises, never prints a credential."""
     if github_storage.configured():
