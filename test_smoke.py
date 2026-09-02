@@ -1106,3 +1106,154 @@ def test_a_stale_identifier_yields_no_summary_rather_than_raising():
 
     assert backend_summary(FromAnOlderVersion()) == ""
     assert gallery_species_counts(FromAnOlderVersion()) == {}
+
+
+# --------------------------------------------------------------- fitness to use
+
+def _gallery_at(path, *, reliable, accuracy, chance):
+    from core.matcher import Gallery, normalise_rows
+
+    gallery = Gallery(
+        vectors=normalise_rows(np.eye(2, dtype=np.float32)),
+        species=np.array(["lissemys_punctata", "pangshura_tecta"]),
+        captures=np.array(["a", "b"]),
+        classes=["lissemys_punctata", "pangshura_tecta"],
+        calibrated=True,
+    )
+    gallery.reliable = reliable
+    gallery.metrics = {"accuracy": accuracy, "chance": chance, "n_evaluated": 16,
+                       "per_class_recall": {"lissemys_punctata": {"n": 8, "recall": 0.0}}}
+    gallery.save(path)
+    return gallery
+
+
+def _identifier_for(tmp_path, gallery_path):
+    from core.database import SpeciesDB
+    from core.inference import ChelonidIdentifier
+
+    return ChelonidIdentifier(
+        SpeciesDB.load(),
+        classifier_path=tmp_path / "none.pt",
+        calibration_path=tmp_path / "none.json",
+        gallery_path=gallery_path,
+        published_gallery_path=tmp_path / "none.npz",
+    )
+
+
+def test_a_gallery_at_chance_is_reported_unfit(tmp_path):
+    """Calibrated and useless are compatible: a fitted temperature over scores
+    that carry nothing reports 1/n for everything, with an excellent ECE."""
+    from core.inference import gallery_is_unfit
+
+    path = tmp_path / "gallery.npz"
+    _gallery_at(path, reliable=False, accuracy=0.0, chance=0.036)
+
+    unfit = gallery_is_unfit(_identifier_for(tmp_path, path))
+    assert unfit is not None
+    assert unfit["accuracy"] == 0.0
+    assert unfit["chance"] == 0.036
+    assert unfit["per_class_recall"]["lissemys_punctata"]["recall"] == 0.0
+
+
+def test_a_gallery_that_beat_chance_is_not_flagged(tmp_path):
+    from core.inference import gallery_is_unfit
+
+    path = tmp_path / "gallery.npz"
+    _gallery_at(path, reliable=True, accuracy=0.62, chance=0.036)
+    assert gallery_is_unfit(_identifier_for(tmp_path, path)) is None
+
+
+def test_reliability_survives_saving_and_publishing(tmp_path):
+    from core.matcher import Gallery
+
+    path = tmp_path / "gallery.npz"
+    gallery = _gallery_at(path, reliable=False, accuracy=0.0, chance=0.036)
+    assert Gallery.load(path).reliable is False
+
+    published = tmp_path / "published.npz"
+    gallery.published().save(published)
+    assert Gallery.load(published).reliable is False, "publishing must not launder it"
+
+
+def test_a_gallery_predating_the_check_is_unproven_not_condemned(tmp_path):
+    """Absent evidence is not evidence of failure; those galleries stay usable."""
+    import json
+
+    from core.matcher import Gallery, normalise_rows
+
+    path = tmp_path / "gallery.npz"
+    np.savez_compressed(
+        path,
+        vectors=normalise_rows(np.eye(2, dtype=np.float32)),
+        species=np.array(["lissemys_punctata", "pangshura_tecta"]),
+        captures=np.array(["a", "b"]),
+        meta=np.array(json.dumps({
+            "classes": ["lissemys_punctata", "pangshura_tecta"],
+            "backbone": "resnet50", "neighbours": 3, "temperature": 0.07,
+            "similarity_floor": 0.3, "calibrated": True, "metrics": {},
+        })),
+    )
+    assert Gallery.load(path).reliable is True
+
+
+def test_the_unfit_guard_is_quiet_when_no_gallery_is_installed(tmp_path):
+    from core.inference import gallery_is_unfit
+
+    assert gallery_is_unfit(_identifier_for(tmp_path, tmp_path / "absent.npz")) is None
+
+    class FromAnOlderVersion:
+        available = False
+
+    assert gallery_is_unfit(FromAnOlderVersion()) is None
+
+
+def test_an_older_gallery_is_judged_on_the_accuracy_it_recorded(tmp_path):
+    """The galleries most needing the verdict are the ones already deployed."""
+    import json
+
+    from core.matcher import Gallery, normalise_rows
+
+    def write(metrics):
+        path = tmp_path / f"g{len(metrics)}{metrics.get('accuracy')}.npz"
+        np.savez_compressed(
+            path,
+            vectors=normalise_rows(np.eye(2, dtype=np.float32)),
+            species=np.array(["lissemys_punctata", "pangshura_tecta"]),
+            captures=np.array(["a", "b"]),
+            meta=np.array(json.dumps({
+                "classes": ["lissemys_punctata", "pangshura_tecta"],
+                "backbone": "resnet50", "neighbours": 3, "temperature": 0.07,
+                "similarity_floor": 0.3, "calibrated": True, "metrics": metrics,
+            })),
+        )
+        return Gallery.load(path)
+
+    # Two classes, so chance is 0.5.
+    assert write({"accuracy": 0.0}).reliable is False
+    assert write({"accuracy": 0.5}).reliable is False, "matching chance is not beating it"
+    assert write({"accuracy": 0.9}).reliable is True
+    assert write({}).reliable is True, "nothing recorded means unproven, not bad"
+
+
+def test_the_unfit_report_always_has_numbers_to_render(tmp_path):
+    """The app formats both as percentages; a None would take the page down."""
+    from core.inference import gallery_is_unfit
+    from core.matcher import Gallery, normalise_rows
+
+    path = tmp_path / "gallery.npz"
+    gallery = Gallery(
+        vectors=normalise_rows(np.eye(2, dtype=np.float32)),
+        species=np.array(["lissemys_punctata", "pangshura_tecta"]),
+        captures=np.array(["a", "b"]),
+        classes=["lissemys_punctata", "pangshura_tecta"],
+        calibrated=True,
+    )
+    gallery.reliable = False
+    gallery.metrics = {"accuracy": 0.0}          # no chance, no n_evaluated
+    gallery.save(path)
+
+    unfit = gallery_is_unfit(_identifier_for(tmp_path, path))
+    assert unfit["chance"] == pytest.approx(0.5), "derived from the class count"
+    assert f"{unfit['accuracy']:.0%}" == "0%"
+    assert f"{unfit['chance']:.0%}" == "50%"
+    assert unfit["n_evaluated"] == 0

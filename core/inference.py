@@ -84,6 +84,37 @@ def backend_summary(identifier) -> str:
     )
 
 
+def gallery_is_unfit(identifier) -> dict | None:
+    """Metrics of a gallery that failed its own held-out test, else None.
+
+    A gallery measured at or below chance is not an identifier. It still
+    returns a species for every photograph, still reports a probability, and
+    with a fitted temperature that probability is even honest — honestly
+    uniform. Nothing downstream can tell that apart from a working gallery, so
+    it has to be caught here and refused rather than presented.
+    """
+    try:
+        if backend_of(identifier) != "gallery":
+            return None
+        gallery = identifier._ensure_gallery()
+    except Exception:  # noqa: BLE001 - a guard must not itself take the page down
+        return None
+    if gallery.reliable:
+        return None
+    # A gallery built before the check recorded no chance rate, and the caller
+    # renders both numbers; derive it rather than hand back a None to format.
+    chance = gallery.metrics.get("chance")
+    if not isinstance(chance, (int, float)) and gallery.classes:
+        chance = 1.0 / len(gallery.classes)
+    accuracy = gallery.metrics.get("accuracy")
+    return {
+        "accuracy": float(accuracy) if isinstance(accuracy, (int, float)) else 0.0,
+        "chance": float(chance) if isinstance(chance, (int, float)) else 0.0,
+        "n_evaluated": gallery.metrics.get("n_evaluated", 0),
+        "per_class_recall": gallery.metrics.get("per_class_recall", {}),
+    }
+
+
 def gallery_species_counts(identifier) -> dict[str, int]:
     """Photographs per species in the loaded gallery, or {} if unavailable."""
     try:

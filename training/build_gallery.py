@@ -165,6 +165,12 @@ def evaluate(gallery: Gallery, fpr: float) -> dict:
     temperature = fit_temperature(scores, labels)
     floor = float(np.percentile(best_similarity, 100 * fpr))
 
+    # The bar an identifier has to clear is not "calibrated", it is "better
+    # than guessing". A gallery can be beautifully calibrated about knowing
+    # nothing: fit a temperature to scores that carry no signal and it reports
+    # 1/n for everything, with an excellent calibration error.
+    chance = 1.0 / len(gallery.classes)
+
     from core.inference import softmax
     from training.calibrate import expected_calibration_error
 
@@ -173,6 +179,8 @@ def evaluate(gallery: Gallery, fpr: float) -> dict:
 
     return {
         "measurable": True,
+        "reliable": accuracy > chance,
+        "chance": round(chance, 4),
         "unmeasurable_classes": unmeasurable,
         "n_evaluated": len(rows),
         "accuracy": round(accuracy, 4),
@@ -241,6 +249,7 @@ def build(args: argparse.Namespace) -> None:
         gallery.temperature = metrics["temperature"]
         gallery.similarity_floor = metrics["similarity_floor"]
         gallery.calibrated = True
+        gallery.reliable = metrics["reliable"]
 
         logger.info("Held-out top-1 accuracy : %.3f  (%d photographs)",
                     metrics["accuracy"], metrics["n_evaluated"])
@@ -254,6 +263,27 @@ def build(args: argparse.Namespace) -> None:
                                       key=lambda kv: kv[1]["recall"]):
             flag = "  <-- unreliable" if row["recall"] < 0.5 else ""
             logger.info("  %-32s %4.2f  (n=%d)%s", species_id, row["recall"], row["n"], flag)
+        if not metrics["reliable"]:
+            logger.error(
+                "THIS GALLERY DOES NOT IDENTIFY ANYTHING. Held-out accuracy is "
+                "%.3f against %.3f for picking a species at random. Every "
+                "photograph it was asked about, with its own animal held out, "
+                "it got wrong or no better than a coin. The photograph tab will "
+                "refuse to use it, which is the correct outcome: a calibrated "
+                "gallery that knows nothing still reports a species, and that "
+                "species goes on a form.",
+                metrics["accuracy"], metrics["chance"],
+            )
+            logger.error(
+                "The usual cause is that the gallery's photographs and the "
+                "photographs people submit are not alike — scanned reference "
+                "plates against phone photographs taken in the field. Generic "
+                "image features separate those two far more strongly than they "
+                "separate one species from another, so a field photograph "
+                "matches other field photographs whatever animal is in them. "
+                "The fix is field photographs of the species themselves, from "
+                "more than one animal each."
+            )
         if metrics["temperature"] <= 0.011 or metrics["temperature"] >= 1.0:
             logger.warning(
                 "The fitted temperature landed at the edge of the search range. "

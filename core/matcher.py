@@ -237,6 +237,26 @@ def fit_temperature(scores: np.ndarray, labels: np.ndarray) -> float:
 
 # ====================================================================== gallery
 
+def _reliability_of(meta: dict) -> bool:
+    """Whether a stored gallery beat chance, deciding it if it never recorded so.
+
+    Galleries written before the check carry no verdict but do carry the
+    accuracy it would have been drawn from, so read it off rather than waiting
+    for a rebuild — the ones most in need of the verdict are the ones already
+    deployed. A gallery with nothing to read stays unproven, not condemned:
+    absent evidence is not evidence of failure.
+    """
+    if "reliable" in meta:
+        return bool(meta["reliable"])
+
+    metrics = meta.get("metrics") or {}
+    accuracy = metrics.get("accuracy")
+    classes = meta.get("classes") or []
+    if not isinstance(accuracy, (int, float)) or not classes:
+        return True
+    return float(accuracy) > 1.0 / len(classes)
+
+
 @dataclass
 class Gallery:
     """Every embedded photograph, and what is known about how well it matches."""
@@ -250,6 +270,11 @@ class Gallery:
     temperature: float = GALLERY_TEMPERATURE
     similarity_floor: float = GALLERY_SIMILARITY_FLOOR
     calibrated: bool = False
+    # Whether held-out accuracy beat picking a species at random. A gallery
+    # that did not is not an identifier, however well calibrated it is:
+    # calibration only means the reported probability matches reality, and a
+    # gallery can be perfectly calibrated about knowing nothing.
+    reliable: bool = True
     metrics: dict = None
 
     def __post_init__(self) -> None:
@@ -271,6 +296,7 @@ class Gallery:
                 "temperature": self.temperature,
                 "similarity_floor": self.similarity_floor,
                 "calibrated": self.calibrated,
+                "reliable": self.reliable,
                 "metrics": self.metrics,
             })),
         )
@@ -289,6 +315,7 @@ class Gallery:
                 temperature=float(meta["temperature"]),
                 similarity_floor=float(meta["similarity_floor"]),
                 calibrated=bool(meta["calibrated"]),
+                reliable=_reliability_of(meta),
                 metrics=meta.get("metrics", {}),
             )
 
@@ -314,8 +341,10 @@ class Gallery:
             temperature=self.temperature,
             similarity_floor=self.similarity_floor,
             calibrated=self.calibrated,
+            reliable=self.reliable,
             metrics=dict(self.metrics),
         )
+        clone.reliable = self.reliable
         clone.metrics["published"] = True
         return clone
 
