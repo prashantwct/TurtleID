@@ -1,0 +1,18 @@
+{
+  "id": "2b25b653",
+  "kind": "image",
+  "submitted_utc": "2026-09-02T09:11:38+00:00",
+  "app_version": "1.0.0",
+  "contributor": "anonymous",
+  "species_id": "pangshura_tecta",
+  "certainty": "verified",
+  "view": "ventral (plastron)",
+  "state": null,
+  "image_hash": "1de4e6e07850a1fb",
+  "image_file": "pangshura_tecta_1de4e6e07850a1fb.jpg",
+  "notes": "",
+  "exif_gps_present_and_removed": true,
+  "redactions": [],
+  "status": "pending",
+  "stored_key": "submissions/images/pangshura_tecta_1de4e6e07850a1fb.jpg"
+}

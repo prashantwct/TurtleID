@@ -1,0 +1,18 @@
+{
+  "id": "53c5e7b6",
+  "kind": "image",
+  "submitted_utc": "2026-09-02T09:16:08+00:00",
+  "app_version": "1.0.0",
+  "contributor": "anonymous",
+  "species_id": "geoclemys_hamiltonii",
+  "certainty": "verified",
+  "view": "dorsal",
+  "state": null,
+  "image_hash": "4e78a7d8861a5754",
+  "image_file": "geoclemys_hamiltonii_4e78a7d8861a5754.jpg",
+  "notes": "",
+  "exif_gps_present_and_removed": true,
+  "redactions": [],
+  "status": "pending",
+  "stored_key": "submissions/images/geoclemys_hamiltonii_4e78a7d8861a5754.jpg"
+}
