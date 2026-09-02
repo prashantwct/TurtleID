@@ -755,3 +755,70 @@ def test_storage_prefers_github_and_translates_its_errors(monkeypatch):
     monkeypatch.setattr(github_storage, "put_image", explode)
     with pytest.raises(storage.StorageError, match="commit refused"):
         storage.put_image("x.jpg", b"data")
+
+
+def test_committed_submissions_are_taken_up_from_the_working_tree(tmp_path, monkeypatch):
+    """With the GitHub backend there is nothing to download; git pull did it."""
+    import argparse
+    import json
+
+    from core import contributions
+    from training import pull_contributions
+
+    submissions = tmp_path / "submissions"
+    (submissions / "records").mkdir(parents=True)
+    (submissions / "images").mkdir(parents=True)
+    (submissions / "images" / "lissemys_punctata_ff.jpg").write_bytes(b"jpeg")
+    (submissions / "records" / "abc123.json").write_text(json.dumps({
+        "id": "abc123", "kind": "image", "species_id": "lissemys_punctata",
+        "contributor": "RO Churna", "certainty": "confident",
+        "image_file": "lissemys_punctata_ff.jpg", "status": "pending",
+    }), encoding="utf-8")
+
+    contrib_dir = tmp_path / "contributions"
+    image_dir = contrib_dir / "images"
+    monkeypatch.setattr(pull_contributions, "CONTRIB_DIR", contrib_dir)
+    monkeypatch.setattr(pull_contributions, "IMAGE_DIR", image_dir)
+    monkeypatch.setattr(pull_contributions, "PROPOSAL_FILE", contrib_dir / "proposals.jsonl")
+    monkeypatch.setattr(pull_contributions, "local_record_ids", lambda: set())
+
+    args = argparse.Namespace(list=False, from_repo=True, submissions=submissions)
+    pull_contributions.pull(args)
+
+    assert (image_dir / "lissemys_punctata_ff.jpg").read_bytes() == b"jpeg"
+    written = (contrib_dir / "proposals.jsonl").read_text(encoding="utf-8").strip()
+    assert json.loads(written)["id"] == "abc123"
+
+
+def test_taking_up_submissions_twice_adds_nothing(tmp_path, monkeypatch):
+    import argparse
+    import json
+
+    from training import pull_contributions
+
+    submissions = tmp_path / "submissions"
+    (submissions / "records").mkdir(parents=True)
+    (submissions / "images").mkdir(parents=True)
+    (submissions / "records" / "abc123.json").write_text(
+        json.dumps({"id": "abc123", "species_id": "lissemys_punctata"}), encoding="utf-8")
+
+    contrib_dir = tmp_path / "contributions"
+    monkeypatch.setattr(pull_contributions, "CONTRIB_DIR", contrib_dir)
+    monkeypatch.setattr(pull_contributions, "IMAGE_DIR", contrib_dir / "images")
+    monkeypatch.setattr(pull_contributions, "PROPOSAL_FILE", contrib_dir / "proposals.jsonl")
+    monkeypatch.setattr(pull_contributions, "local_record_ids", lambda: {"abc123"})
+
+    args = argparse.Namespace(list=False, from_repo=True, submissions=submissions)
+    pull_contributions.pull(args)
+
+    assert not (contrib_dir / "proposals.jsonl").exists(), "a known record must not be re-appended"
+
+
+def test_a_missing_submissions_directory_says_to_git_pull(tmp_path):
+    import argparse
+
+    from training import pull_contributions
+
+    args = argparse.Namespace(list=False, from_repo=True, submissions=tmp_path / "nothing")
+    with pytest.raises(SystemExit, match="git pull"):
+        pull_contributions.pull(args)
