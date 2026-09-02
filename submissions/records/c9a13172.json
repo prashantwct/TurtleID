@@ -1,0 +1,18 @@
+{
+  "id": "c9a13172",
+  "kind": "image",
+  "submitted_utc": "2026-09-02T09:18:53+00:00",
+  "app_version": "1.0.0",
+  "contributor": "anonymous",
+  "species_id": "geochelone_elegans",
+  "certainty": "verified",
+  "view": "lateral profile",
+  "state": null,
+  "image_hash": "c4594e5599bc01a4",
+  "image_file": "geochelone_elegans_c4594e5599bc01a4.jpg",
+  "notes": "",
+  "exif_gps_present_and_removed": true,
+  "redactions": [],
+  "status": "pending",
+  "stored_key": "submissions/images/geochelone_elegans_c4594e5599bc01a4.jpg"
+}
