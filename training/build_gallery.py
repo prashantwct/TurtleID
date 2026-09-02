@@ -63,6 +63,7 @@ from config import (  # noqa: E402
     REFERENCE_MANIFEST,
     SPECIES_DB_PATH,
 )
+from core.detect import crop_to_animal, load_detector  # noqa: E402
 from core.matcher import (  # noqa: E402
     DEFAULT_BACKBONE,
     Gallery,
@@ -78,16 +79,30 @@ def known_species_ids() -> set[str]:
     return {sp["id"] for sp in db["species"]}
 
 
-def open_images(paths: list[Path]):
-    """Yield each readable photograph, reporting the ones that are not."""
+def open_images(paths: list[Path], detector=None, counter: dict | None = None):
+    """Yield each readable photograph, cropped to the animal where one is found.
+
+    The crop is the same call `core/inference.py` makes on a query, so a
+    gallery entry and the photograph searched against it get identical
+    treatment. Frames where nothing was detected are embedded whole and
+    counted: a detector that finds nothing in half the gallery is a fact the
+    build has to report, not absorb.
+    """
     from PIL import Image, ImageOps
 
     for path in paths:
         try:
             with Image.open(path) as handle:
-                yield ImageOps.exif_transpose(handle).convert("RGB")
+                image = ImageOps.exif_transpose(handle).convert("RGB")
         except Exception as exc:  # noqa: BLE001 - one bad file must not stop a build
             logger.warning("Skipping %s: %s", path.name, exc)
+            continue
+
+        if detector is not None:
+            image, confidence = crop_to_animal(image, detector)
+            if counter is not None:
+                counter["cropped" if confidence is not None else "whole"] += 1
+        yield image
 
 
 def gather(pool: Path, seed_plates: bool) -> tuple[list[Path], list[str], list[str]]:
@@ -165,6 +180,12 @@ def evaluate(gallery: Gallery, fpr: float) -> dict:
     temperature = fit_temperature(scores, labels)
     floor = float(np.percentile(best_similarity, 100 * fpr))
 
+    # The bar an identifier has to clear is not "calibrated", it is "better
+    # than guessing". A gallery can be beautifully calibrated about knowing
+    # nothing: fit a temperature to scores that carry no signal and it reports
+    # 1/n for everything, with an excellent calibration error.
+    chance = 1.0 / len(gallery.classes)
+
     from core.inference import softmax
     from training.calibrate import expected_calibration_error
 
@@ -173,6 +194,8 @@ def evaluate(gallery: Gallery, fpr: float) -> dict:
 
     return {
         "measurable": True,
+        "reliable": accuracy > chance,
+        "chance": round(chance, 4),
         "unmeasurable_classes": unmeasurable,
         "n_evaluated": len(rows),
         "accuracy": round(accuracy, 4),
@@ -213,8 +236,19 @@ def build(args: argparse.Namespace) -> None:
     logger.info("Embedding %d photographs with %s (first run downloads weights)...",
                 len(paths), args.backbone)
 
+    detector = load_detector(args.detector) if args.detector else None
+    if args.detector and detector is None:
+        raise SystemExit(
+            f"No detector could be loaded from {args.detector}. Check the path, "
+            f"or drop --detector to embed whole frames."
+        )
+    if detector is not None:
+        logger.info("Cropping to the animal with %s before embedding.", args.detector)
+
+    tally = {"cropped": 0, "whole": 0}
     model, transform = load_backbone(args.backbone)
-    vectors = embed_images(open_images(paths), model, transform, batch_size=args.batch)
+    vectors = embed_images(open_images(paths, detector, tally), model, transform,
+                           batch_size=args.batch)
     if vectors.shape[0] != len(paths):
         # open_images drops unreadable files; keep the labels aligned with what
         # was actually embedded rather than writing a gallery that is off by one.
@@ -225,6 +259,17 @@ def build(args: argparse.Namespace) -> None:
             f"Remove or convert them and run again."
         )
 
+    if detector is not None:
+        logger.info("Detector found an animal in %d of %d photographs.",
+                    tally["cropped"], tally["cropped"] + tally["whole"])
+        if tally["whole"]:
+            logger.warning(
+                "%d photograph(s) had no detection and were embedded whole. They "
+                "sit in a different space from the crops around them, which is "
+                "the very mismatch cropping is meant to remove — check them, or "
+                "lower DET_CONF_THRESHOLD in config.py.", tally["whole"],
+            )
+
     gallery = Gallery(
         vectors=vectors,
         species=np.array(species),
@@ -232,6 +277,7 @@ def build(args: argparse.Namespace) -> None:
         classes=sorted(set(species)),
         backbone=args.backbone,
         neighbours=args.neighbours,
+        cropped=detector is not None,
     )
 
     logger.info("Leave-one-capture-out over %d species...", len(gallery.classes))
@@ -241,6 +287,7 @@ def build(args: argparse.Namespace) -> None:
         gallery.temperature = metrics["temperature"]
         gallery.similarity_floor = metrics["similarity_floor"]
         gallery.calibrated = True
+        gallery.reliable = metrics["reliable"]
 
         logger.info("Held-out top-1 accuracy : %.3f  (%d photographs)",
                     metrics["accuracy"], metrics["n_evaluated"])
@@ -254,6 +301,27 @@ def build(args: argparse.Namespace) -> None:
                                       key=lambda kv: kv[1]["recall"]):
             flag = "  <-- unreliable" if row["recall"] < 0.5 else ""
             logger.info("  %-32s %4.2f  (n=%d)%s", species_id, row["recall"], row["n"], flag)
+        if not metrics["reliable"]:
+            logger.error(
+                "THIS GALLERY DOES NOT IDENTIFY ANYTHING. Held-out accuracy is "
+                "%.3f against %.3f for picking a species at random. Every "
+                "photograph it was asked about, with its own animal held out, "
+                "it got wrong or no better than a coin. The photograph tab will "
+                "refuse to use it, which is the correct outcome: a calibrated "
+                "gallery that knows nothing still reports a species, and that "
+                "species goes on a form.",
+                metrics["accuracy"], metrics["chance"],
+            )
+            logger.error(
+                "The usual cause is that the gallery's photographs and the "
+                "photographs people submit are not alike — scanned reference "
+                "plates against phone photographs taken in the field. Generic "
+                "image features separate those two far more strongly than they "
+                "separate one species from another, so a field photograph "
+                "matches other field photographs whatever animal is in them. "
+                "The fix is field photographs of the species themselves, from "
+                "more than one animal each."
+            )
         if metrics["temperature"] <= 0.011 or metrics["temperature"] >= 1.0:
             logger.warning(
                 "The fitted temperature landed at the edge of the search range. "
@@ -352,6 +420,10 @@ def main() -> None:
     p.add_argument("--batch", type=int, default=16)
     p.add_argument("--fpr", type=float, default=0.05,
                    help="Target false-rejection rate for the similarity floor")
+    p.add_argument("--detector", default=None,
+                   help="Detector weights (e.g. models/chelonid_det.pt). Crops "
+                        "each photograph to the animal before embedding, the "
+                        "same way the app crops a query. See core/detect.py.")
     p.add_argument("--publish", action="store_true",
                    help="Also write a committable copy with capture ids stripped")
     p.add_argument("--publish-to", type=Path, default=PUBLISHED_GALLERY_PATH)

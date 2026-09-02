@@ -40,6 +40,8 @@ from core.inference import (
     ChelonidIdentifier,
     backend_of,
     backend_summary,
+    detector_mismatch,
+    gallery_is_unfit,
     gallery_species_counts,
 )
 from core.morphkey import CHARACTERS, most_discriminating, run_key
@@ -397,6 +399,55 @@ def tab_identify() -> None:
                 "Calibration is not optional on either path. An uncalibrated "
                 "model reports confident numbers that are not confidence."
             )
+        return
+
+    _unfit = gallery_is_unfit(IDENTIFIER)
+    if _unfit:
+        _acc, _chance = _unfit.get("accuracy"), _unfit.get("chance")
+        st.error(
+            "**This gallery does not identify anything, and the photograph tab "
+            "is switched off because of it.**\n\n"
+            f"Held out from its own photographs, it was right "
+            f"{_acc:.0%} of the time against {_chance:.0%} for naming a species "
+            f"at random ({_unfit.get('n_evaluated')} photographs tested). It "
+            "would still return a species for anything you upload, with a "
+            "confidence figure attached, and that figure would be meaningless.\n\n"
+            "The **Morphological key** tab is unaffected and is the right tool "
+            "until this is fixed."
+        )
+        with st.expander("Why, and what fixes it"):
+            st.markdown(
+                "Generic image features separate a scanned reference plate from "
+                "a phone photograph taken in the field far more strongly than "
+                "they separate one species from another. So a field photograph "
+                "matches other field photographs whatever animal is in them, and "
+                "the reference plates it should be matching sit too far away to "
+                "reach.\n\n"
+                "What fixes it is field photographs of the species themselves — "
+                "several animals each, taken the way the photographs people "
+                "upload are taken. Rebuild with "
+                "`python -m training.build_gallery --publish` as they accumulate; "
+                "the tab switches back on as soon as held-out accuracy beats "
+                "chance."
+            )
+            if _unfit.get("per_class_recall"):
+                st.caption("Held-out recall by species:")
+                for _sid, _row in sorted(_unfit["per_class_recall"].items()):
+                    _sp = DB.get(_sid) if _sid in DB else None
+                    _name = _sp.scientific_name if _sp else _sid
+                    st.markdown(f"- *{_name}* — {_row['recall']:.0%} of {_row['n']}")
+        return
+
+    _mismatch = detector_mismatch(IDENTIFIER)
+    if _mismatch:
+        st.error(
+            "**The gallery and this app are not preparing photographs the same "
+            "way, so the photograph tab is switched off.**\n\n"
+            f"{_mismatch}\n\n"
+            "Matching a crop of an animal against a whole frame compares the "
+            "background as much as the animal, which is worse than doing "
+            "neither. The **Morphological key** tab is unaffected."
+        )
         return
 
     if backend == "gallery":

@@ -1106,3 +1106,321 @@ def test_a_stale_identifier_yields_no_summary_rather_than_raising():
 
     assert backend_summary(FromAnOlderVersion()) == ""
     assert gallery_species_counts(FromAnOlderVersion()) == {}
+
+
+# --------------------------------------------------------------- fitness to use
+
+def _gallery_at(path, *, reliable, accuracy, chance):
+    from core.matcher import Gallery, normalise_rows
+
+    gallery = Gallery(
+        vectors=normalise_rows(np.eye(2, dtype=np.float32)),
+        species=np.array(["lissemys_punctata", "pangshura_tecta"]),
+        captures=np.array(["a", "b"]),
+        classes=["lissemys_punctata", "pangshura_tecta"],
+        calibrated=True,
+    )
+    gallery.reliable = reliable
+    gallery.metrics = {"accuracy": accuracy, "chance": chance, "n_evaluated": 16,
+                       "per_class_recall": {"lissemys_punctata": {"n": 8, "recall": 0.0}}}
+    gallery.save(path)
+    return gallery
+
+
+def _identifier_for(tmp_path, gallery_path):
+    from core.database import SpeciesDB
+    from core.inference import ChelonidIdentifier
+
+    return ChelonidIdentifier(
+        SpeciesDB.load(),
+        classifier_path=tmp_path / "none.pt",
+        calibration_path=tmp_path / "none.json",
+        gallery_path=gallery_path,
+        published_gallery_path=tmp_path / "none.npz",
+    )
+
+
+def test_a_gallery_at_chance_is_reported_unfit(tmp_path):
+    """Calibrated and useless are compatible: a fitted temperature over scores
+    that carry nothing reports 1/n for everything, with an excellent ECE."""
+    from core.inference import gallery_is_unfit
+
+    path = tmp_path / "gallery.npz"
+    _gallery_at(path, reliable=False, accuracy=0.0, chance=0.036)
+
+    unfit = gallery_is_unfit(_identifier_for(tmp_path, path))
+    assert unfit is not None
+    assert unfit["accuracy"] == 0.0
+    assert unfit["chance"] == 0.036
+    assert unfit["per_class_recall"]["lissemys_punctata"]["recall"] == 0.0
+
+
+def test_a_gallery_that_beat_chance_is_not_flagged(tmp_path):
+    from core.inference import gallery_is_unfit
+
+    path = tmp_path / "gallery.npz"
+    _gallery_at(path, reliable=True, accuracy=0.62, chance=0.036)
+    assert gallery_is_unfit(_identifier_for(tmp_path, path)) is None
+
+
+def test_reliability_survives_saving_and_publishing(tmp_path):
+    from core.matcher import Gallery
+
+    path = tmp_path / "gallery.npz"
+    gallery = _gallery_at(path, reliable=False, accuracy=0.0, chance=0.036)
+    assert Gallery.load(path).reliable is False
+
+    published = tmp_path / "published.npz"
+    gallery.published().save(published)
+    assert Gallery.load(published).reliable is False, "publishing must not launder it"
+
+
+def test_a_gallery_predating_the_check_is_unproven_not_condemned(tmp_path):
+    """Absent evidence is not evidence of failure; those galleries stay usable."""
+    import json
+
+    from core.matcher import Gallery, normalise_rows
+
+    path = tmp_path / "gallery.npz"
+    np.savez_compressed(
+        path,
+        vectors=normalise_rows(np.eye(2, dtype=np.float32)),
+        species=np.array(["lissemys_punctata", "pangshura_tecta"]),
+        captures=np.array(["a", "b"]),
+        meta=np.array(json.dumps({
+            "classes": ["lissemys_punctata", "pangshura_tecta"],
+            "backbone": "resnet50", "neighbours": 3, "temperature": 0.07,
+            "similarity_floor": 0.3, "calibrated": True, "metrics": {},
+        })),
+    )
+    assert Gallery.load(path).reliable is True
+
+
+def test_the_unfit_guard_is_quiet_when_no_gallery_is_installed(tmp_path):
+    from core.inference import gallery_is_unfit
+
+    assert gallery_is_unfit(_identifier_for(tmp_path, tmp_path / "absent.npz")) is None
+
+    class FromAnOlderVersion:
+        available = False
+
+    assert gallery_is_unfit(FromAnOlderVersion()) is None
+
+
+def test_an_older_gallery_is_judged_on_the_accuracy_it_recorded(tmp_path):
+    """The galleries most needing the verdict are the ones already deployed."""
+    import json
+
+    from core.matcher import Gallery, normalise_rows
+
+    def write(metrics):
+        path = tmp_path / f"g{len(metrics)}{metrics.get('accuracy')}.npz"
+        np.savez_compressed(
+            path,
+            vectors=normalise_rows(np.eye(2, dtype=np.float32)),
+            species=np.array(["lissemys_punctata", "pangshura_tecta"]),
+            captures=np.array(["a", "b"]),
+            meta=np.array(json.dumps({
+                "classes": ["lissemys_punctata", "pangshura_tecta"],
+                "backbone": "resnet50", "neighbours": 3, "temperature": 0.07,
+                "similarity_floor": 0.3, "calibrated": True, "metrics": metrics,
+            })),
+        )
+        return Gallery.load(path)
+
+    # Two classes, so chance is 0.5.
+    assert write({"accuracy": 0.0}).reliable is False
+    assert write({"accuracy": 0.5}).reliable is False, "matching chance is not beating it"
+    assert write({"accuracy": 0.9}).reliable is True
+    assert write({}).reliable is True, "nothing recorded means unproven, not bad"
+
+
+def test_the_unfit_report_always_has_numbers_to_render(tmp_path):
+    """The app formats both as percentages; a None would take the page down."""
+    from core.inference import gallery_is_unfit
+    from core.matcher import Gallery, normalise_rows
+
+    path = tmp_path / "gallery.npz"
+    gallery = Gallery(
+        vectors=normalise_rows(np.eye(2, dtype=np.float32)),
+        species=np.array(["lissemys_punctata", "pangshura_tecta"]),
+        captures=np.array(["a", "b"]),
+        classes=["lissemys_punctata", "pangshura_tecta"],
+        calibrated=True,
+    )
+    gallery.reliable = False
+    gallery.metrics = {"accuracy": 0.0}          # no chance, no n_evaluated
+    gallery.save(path)
+
+    unfit = gallery_is_unfit(_identifier_for(tmp_path, path))
+    assert unfit["chance"] == pytest.approx(0.5), "derived from the class count"
+    assert f"{unfit['accuracy']:.0%}" == "0%"
+    assert f"{unfit['chance']:.0%}" == "50%"
+    assert unfit["n_evaluated"] == 0
+
+
+# --------------------------------------------------------------- detect and crop
+
+class _FakeBoxes:
+    def __init__(self, xyxy, conf):
+        self.xyxy = _FakeTensor(np.array(xyxy, dtype=np.float32))
+        self.conf = _FakeTensor(np.array(conf, dtype=np.float32))
+
+    def __len__(self):
+        return len(self.conf.cpu().numpy())
+
+
+class _FakeTensor:
+    def __init__(self, value):
+        self._value = value
+
+    def cpu(self):
+        return self
+
+    def numpy(self):
+        return self._value
+
+
+class _FakeDetector:
+    """Stands in for an Ultralytics model; no weights to download."""
+
+    def __init__(self, xyxy, conf):
+        self.boxes = _FakeBoxes(xyxy, conf)
+
+    def predict(self, image, conf=None, verbose=False):
+        return [self]
+
+
+def test_cropping_takes_the_most_confident_box_with_padding():
+    pytest.importorskip("PIL", reason="CI installs only numpy and pytest")
+    from PIL import Image
+
+    from core.detect import crop_to_animal
+
+    image = Image.new("RGB", (200, 200), (10, 10, 10))
+    detector = _FakeDetector([[10, 10, 50, 50], [100, 100, 180, 180]], [0.4, 0.9])
+
+    cropped, confidence = crop_to_animal(image, detector)
+    assert confidence == pytest.approx(0.9), "the 0.4 box must lose"
+    # An 80px box padded by 8% (6.4px) a side, truncated to whole pixels:
+    # 100-6.4 -> 93, 180+6.4 -> 186.
+    assert cropped.size == (93, 93)
+    assert cropped.size < image.size, "the frame around the animal is gone"
+
+
+def test_no_detection_keeps_the_whole_frame():
+    pytest.importorskip("PIL", reason="CI installs only numpy and pytest")
+    from PIL import Image
+
+    from core.detect import crop_to_animal
+
+    image = Image.new("RGB", (64, 64), (1, 2, 3))
+    cropped, confidence = crop_to_animal(image, _FakeDetector([], []))
+    assert cropped is image and confidence is None
+
+
+def test_no_detector_keeps_the_whole_frame():
+    from core.detect import crop_to_animal
+
+    sentinel = object()
+    assert crop_to_animal(sentinel, None) == (sentinel, None)
+
+
+def test_a_tiny_detection_is_not_worth_cropping_to():
+    pytest.importorskip("PIL", reason="CI installs only numpy and pytest")
+    from PIL import Image
+
+    from core.detect import crop_to_animal
+
+    image = Image.new("RGB", (200, 200))
+    cropped, confidence = crop_to_animal(image, _FakeDetector([[10, 10, 18, 18]], [0.8]))
+    assert cropped is image, "a crop on a speck carries less than the frame"
+    assert confidence == pytest.approx(0.8)
+
+
+def test_a_failing_detector_never_loses_the_photograph():
+    class Exploding:
+        def predict(self, *a, **k):
+            raise RuntimeError("detector is broken")
+
+    from core.detect import crop_to_animal
+
+    sentinel = object()
+    assert crop_to_animal(sentinel, Exploding()) == (sentinel, None)
+
+
+def test_a_missing_detector_file_loads_as_none(tmp_path):
+    from core.detect import load_detector
+
+    assert load_detector(tmp_path / "absent.pt") is None
+
+
+# --------------------------------------------------------------- the invariant
+
+def _cropped_gallery(path, *, cropped):
+    from core.matcher import Gallery, normalise_rows
+
+    gallery = Gallery(
+        vectors=normalise_rows(np.eye(2, dtype=np.float32)),
+        species=np.array(["lissemys_punctata", "pangshura_tecta"]),
+        captures=np.array(["a", "b"]),
+        classes=["lissemys_punctata", "pangshura_tecta"],
+        calibrated=True,
+    )
+    gallery.cropped = cropped
+    gallery.save(path)
+
+
+def _identifier_with(tmp_path, *, gallery_cropped, detector_present):
+    from core.database import SpeciesDB
+    from core.inference import ChelonidIdentifier
+
+    gallery = tmp_path / "gallery.npz"
+    _cropped_gallery(gallery, cropped=gallery_cropped)
+    detector = tmp_path / "chelonid_det.pt"
+    if detector_present:
+        detector.write_bytes(b"")
+    return ChelonidIdentifier(
+        SpeciesDB.load(),
+        classifier_path=tmp_path / "none.pt",
+        detector_path=detector,
+        calibration_path=tmp_path / "none.json",
+        gallery_path=gallery,
+        published_gallery_path=tmp_path / "none.npz",
+    )
+
+
+def test_crops_searched_with_whole_frames_are_refused(tmp_path):
+    from core.inference import detector_mismatch
+
+    identifier = _identifier_with(tmp_path, gallery_cropped=True, detector_present=False)
+    assert "no detector is installed" in detector_mismatch(identifier)
+
+
+def test_whole_frames_searched_with_crops_are_refused(tmp_path):
+    from core.inference import detector_mismatch
+
+    identifier = _identifier_with(tmp_path, gallery_cropped=False, detector_present=True)
+    assert "built from whole frames" in detector_mismatch(identifier)
+
+
+def test_matching_treatment_passes(tmp_path):
+    from core.inference import detector_mismatch
+
+    for cropped in (True, False):
+        identifier = _identifier_with(tmp_path / f"m{cropped}", gallery_cropped=cropped,
+                                      detector_present=cropped)
+        assert detector_mismatch(identifier) is None
+
+
+def test_cropping_survives_saving_and_publishing(tmp_path):
+    from core.matcher import Gallery
+
+    path = tmp_path / "gallery.npz"
+    _cropped_gallery(path, cropped=True)
+    loaded = Gallery.load(path)
+    assert loaded.cropped is True
+
+    published = tmp_path / "published.npz"
+    loaded.published().save(published)
+    assert Gallery.load(published).cropped is True
