@@ -36,8 +36,6 @@ from config import (
     DEFAULT_ENERGY_THRESHOLD,
     DEFAULT_TEMPERATURE,
     DETECTOR_PATH,
-    DET_CONF_THRESHOLD,
-    DET_CROP_PADDING,
     MAX_NORMALISED_ENTROPY,
     GALLERY_PATH,
     MSP_OOD_FLOOR,
@@ -47,6 +45,7 @@ from config import (
     TIER_TENTATIVE,
 )
 from core.database import SpeciesDB
+from core.detect import crop_to_animal, load_detector
 from core.matcher import Gallery, MatcherError, embed_images, load_backbone
 
 logger = logging.getLogger(__name__)
@@ -113,6 +112,39 @@ def gallery_is_unfit(identifier) -> dict | None:
         "n_evaluated": gallery.metrics.get("n_evaluated", 0),
         "per_class_recall": gallery.metrics.get("per_class_recall", {}),
     }
+
+
+def detector_mismatch(identifier) -> str | None:
+    """A description of a crop/whole-frame disagreement, or None.
+
+    A gallery of crops searched with whole frames — or the reverse — differs
+    from every entry in exactly the way cropping exists to remove, so it is
+    worse than either arrangement consistently applied. Nothing downstream can
+    see it: both sides work, the matches are simply wrong.
+    """
+    try:
+        if backend_of(identifier) != "gallery":
+            return None
+        gallery = identifier._ensure_gallery()
+        has_detector = identifier.has_detector
+    except Exception:  # noqa: BLE001 - a guard must not take the page down
+        return None
+
+    if gallery.cropped and not has_detector:
+        return (
+            "This gallery was built from crops of the animal, but no detector "
+            "is installed here, so photographs would be matched whole against "
+            "cropped entries. Put the detector weights at "
+            f"{identifier.detector_path}, or rebuild the gallery without one."
+        )
+    if has_detector and not gallery.cropped:
+        return (
+            "A detector is installed, so photographs are cropped to the animal, "
+            "but this gallery was built from whole frames. Rebuild it with "
+            "`python -m training.build_gallery --detector "
+            f"{identifier.detector_path} --publish`, or remove the detector."
+        )
+    return None
 
 
 def gallery_species_counts(identifier) -> dict[str, int]:
@@ -383,16 +415,13 @@ class ChelonidIdentifier:
         return self._classifier
 
     def _ensure_detector(self):
-        if self._detector is not None or not self.detector_path.exists():
-            return self._detector
-        try:
-            from ultralytics import YOLO
-            self._detector = YOLO(str(self.detector_path))
-            logger.info("Detector loaded from %s", self.detector_path)
-        except Exception as exc:  # detector is optional; never fatal
-            logger.warning("Detector unavailable (%s); classifying full frame.", exc)
-            self._detector = None
+        if self._detector is None:
+            self._detector = load_detector(self.detector_path)
         return self._detector
+
+    @property
+    def has_detector(self) -> bool:
+        return self.detector_path.exists()
 
     def _ensure_gallery(self) -> Gallery:
         if self._gallery is not None:
@@ -449,30 +478,13 @@ class ChelonidIdentifier:
 
     # -- pipeline ------------------------------------------------------
     def _locate(self, image) -> tuple[Any, float | None]:
-        """Crop to the animal if a detector is available. Returns (image, conf)."""
-        det = self._ensure_detector()
-        if det is None:
-            return image, None
-        try:
-            result = det.predict(image, conf=DET_CONF_THRESHOLD, verbose=False)[0]
-            if len(result.boxes) == 0:
-                return image, None
-            confs = result.boxes.conf.cpu().numpy()
-            best = int(np.argmax(confs))
-            x1, y1, x2, y2 = result.boxes.xyxy.cpu().numpy()[best]
-            w, h = x2 - x1, y2 - y1
-            px, py = w * DET_CROP_PADDING, h * DET_CROP_PADDING
-            arr = np.asarray(image)
-            H, W = arr.shape[:2]
-            x1 = max(0, int(x1 - px)); y1 = max(0, int(y1 - py))
-            x2 = min(W, int(x2 + px)); y2 = min(H, int(y2 + py))
-            if x2 - x1 < 16 or y2 - y1 < 16:
-                return image, float(confs[best])
-            from PIL import Image
-            return Image.fromarray(arr[y1:y2, x1:x2]), float(confs[best])
-        except Exception as exc:
-            logger.warning("Detection failed (%s); classifying full frame.", exc)
-            return image, None
+        """Crop to the animal if a detector is available. Returns (image, conf).
+
+        The same function the gallery build uses, so a query and a gallery
+        entry are put through identical treatment. That equality is the whole
+        point; `detector_mismatch` catches it when it breaks.
+        """
+        return crop_to_animal(image, self._ensure_detector())
 
     def _attach_logit_hook(self, model) -> bool:
         """

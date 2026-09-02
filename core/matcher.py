@@ -275,6 +275,10 @@ class Gallery:
     # calibration only means the reported probability matches reality, and a
     # gallery can be perfectly calibrated about knowing nothing.
     reliable: bool = True
+    # Whether entries were cropped to the animal before embedding. A query has
+    # to be treated the same way; searching a gallery of crops with whole
+    # frames is worse than either alone.
+    cropped: bool = False
     metrics: dict = None
 
     def __post_init__(self) -> None:
@@ -297,6 +301,7 @@ class Gallery:
                 "similarity_floor": self.similarity_floor,
                 "calibrated": self.calibrated,
                 "reliable": self.reliable,
+                "cropped": self.cropped,
                 "metrics": self.metrics,
             })),
         )
@@ -316,6 +321,7 @@ class Gallery:
                 similarity_floor=float(meta["similarity_floor"]),
                 calibrated=bool(meta["calibrated"]),
                 reliable=_reliability_of(meta),
+                cropped=bool(meta.get("cropped", False)),
                 metrics=meta.get("metrics", {}),
             )
 
@@ -342,6 +348,7 @@ class Gallery:
             similarity_floor=self.similarity_floor,
             calibrated=self.calibrated,
             reliable=self.reliable,
+            cropped=self.cropped,
             metrics=dict(self.metrics),
         )
         clone.reliable = self.reliable

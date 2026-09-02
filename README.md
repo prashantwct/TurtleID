@@ -467,6 +467,33 @@ the temperature and the similarity floor, so the same guarantees hold as on the
 trained path — a reported 80% should be right about 80% of the time, and a
 photograph resembling nothing in the gallery is rejected rather than named.
 
+#### Cropping to the animal first
+
+```bash
+python -m training.build_gallery --detector models/chelonid_det.pt --publish
+```
+
+The camera-trap pipeline, and what Addax AI / EcoAssist does: a class-agnostic
+detector finds the animal, everything else is discarded, and only the crop is
+embedded. It is the obvious answer to the measurement above — if what separates
+a plate from a field photograph is paper, grass, hands and light, then removing
+all of it should leave the animal to be matched on.
+
+Nothing here ships a detector. COCO has no turtle class, so a stock YOLO is no
+use; what this needs is an animal detector, and
+[MegaDetector](https://github.com/agentmorris/MegaDetector) is the usual free
+choice. Put the weights at `models/chelonid_det.pt`.
+
+**Whatever is done to a gallery photograph must be done to a query.** A gallery
+of crops searched with whole frames differs from every entry in exactly the way
+cropping exists to remove, and is worse than either arrangement applied
+consistently. `Gallery.cropped` records which it was and the app refuses the
+mismatch rather than quietly serving it, so adding a detector after building a
+gallery means rebuilding the gallery.
+
+Whether it helps is a measurement, not a promise. The build prints held-out
+accuracy against chance either way, and that is the number that answers it.
+
 **The number that decides whether it works is held-out accuracy against
 chance.** A gallery can be perfectly calibrated and know nothing: fit a
 temperature to scores carrying no signal and it reports 1/n for everything,

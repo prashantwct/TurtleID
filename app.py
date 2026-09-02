@@ -40,6 +40,7 @@ from core.inference import (
     ChelonidIdentifier,
     backend_of,
     backend_summary,
+    detector_mismatch,
     gallery_is_unfit,
     gallery_species_counts,
 )
@@ -435,6 +436,18 @@ def tab_identify() -> None:
                     _sp = DB.get(_sid) if _sid in DB else None
                     _name = _sp.scientific_name if _sp else _sid
                     st.markdown(f"- *{_name}* — {_row['recall']:.0%} of {_row['n']}")
+        return
+
+    _mismatch = detector_mismatch(IDENTIFIER)
+    if _mismatch:
+        st.error(
+            "**The gallery and this app are not preparing photographs the same "
+            "way, so the photograph tab is switched off.**\n\n"
+            f"{_mismatch}\n\n"
+            "Matching a crop of an animal against a whole frame compares the "
+            "background as much as the animal, which is worse than doing "
+            "neither. The **Morphological key** tab is unaffected."
+        )
         return
 
     if backend == "gallery":

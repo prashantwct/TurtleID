@@ -1257,3 +1257,170 @@ def test_the_unfit_report_always_has_numbers_to_render(tmp_path):
     assert f"{unfit['accuracy']:.0%}" == "0%"
     assert f"{unfit['chance']:.0%}" == "50%"
     assert unfit["n_evaluated"] == 0
+
+
+# --------------------------------------------------------------- detect and crop
+
+class _FakeBoxes:
+    def __init__(self, xyxy, conf):
+        self.xyxy = _FakeTensor(np.array(xyxy, dtype=np.float32))
+        self.conf = _FakeTensor(np.array(conf, dtype=np.float32))
+
+    def __len__(self):
+        return len(self.conf.cpu().numpy())
+
+
+class _FakeTensor:
+    def __init__(self, value):
+        self._value = value
+
+    def cpu(self):
+        return self
+
+    def numpy(self):
+        return self._value
+
+
+class _FakeDetector:
+    """Stands in for an Ultralytics model; no weights to download."""
+
+    def __init__(self, xyxy, conf):
+        self.boxes = _FakeBoxes(xyxy, conf)
+
+    def predict(self, image, conf=None, verbose=False):
+        return [self]
+
+
+def test_cropping_takes_the_most_confident_box_with_padding():
+    pytest.importorskip("PIL", reason="CI installs only numpy and pytest")
+    from PIL import Image
+
+    from core.detect import crop_to_animal
+
+    image = Image.new("RGB", (200, 200), (10, 10, 10))
+    detector = _FakeDetector([[10, 10, 50, 50], [100, 100, 180, 180]], [0.4, 0.9])
+
+    cropped, confidence = crop_to_animal(image, detector)
+    assert confidence == pytest.approx(0.9), "the 0.4 box must lose"
+    # An 80px box padded by 8% (6.4px) a side, truncated to whole pixels:
+    # 100-6.4 -> 93, 180+6.4 -> 186.
+    assert cropped.size == (93, 93)
+    assert cropped.size < image.size, "the frame around the animal is gone"
+
+
+def test_no_detection_keeps_the_whole_frame():
+    pytest.importorskip("PIL", reason="CI installs only numpy and pytest")
+    from PIL import Image
+
+    from core.detect import crop_to_animal
+
+    image = Image.new("RGB", (64, 64), (1, 2, 3))
+    cropped, confidence = crop_to_animal(image, _FakeDetector([], []))
+    assert cropped is image and confidence is None
+
+
+def test_no_detector_keeps_the_whole_frame():
+    from core.detect import crop_to_animal
+
+    sentinel = object()
+    assert crop_to_animal(sentinel, None) == (sentinel, None)
+
+
+def test_a_tiny_detection_is_not_worth_cropping_to():
+    pytest.importorskip("PIL", reason="CI installs only numpy and pytest")
+    from PIL import Image
+
+    from core.detect import crop_to_animal
+
+    image = Image.new("RGB", (200, 200))
+    cropped, confidence = crop_to_animal(image, _FakeDetector([[10, 10, 18, 18]], [0.8]))
+    assert cropped is image, "a crop on a speck carries less than the frame"
+    assert confidence == pytest.approx(0.8)
+
+
+def test_a_failing_detector_never_loses_the_photograph():
+    class Exploding:
+        def predict(self, *a, **k):
+            raise RuntimeError("detector is broken")
+
+    from core.detect import crop_to_animal
+
+    sentinel = object()
+    assert crop_to_animal(sentinel, Exploding()) == (sentinel, None)
+
+
+def test_a_missing_detector_file_loads_as_none(tmp_path):
+    from core.detect import load_detector
+
+    assert load_detector(tmp_path / "absent.pt") is None
+
+
+# --------------------------------------------------------------- the invariant
+
+def _cropped_gallery(path, *, cropped):
+    from core.matcher import Gallery, normalise_rows
+
+    gallery = Gallery(
+        vectors=normalise_rows(np.eye(2, dtype=np.float32)),
+        species=np.array(["lissemys_punctata", "pangshura_tecta"]),
+        captures=np.array(["a", "b"]),
+        classes=["lissemys_punctata", "pangshura_tecta"],
+        calibrated=True,
+    )
+    gallery.cropped = cropped
+    gallery.save(path)
+
+
+def _identifier_with(tmp_path, *, gallery_cropped, detector_present):
+    from core.database import SpeciesDB
+    from core.inference import ChelonidIdentifier
+
+    gallery = tmp_path / "gallery.npz"
+    _cropped_gallery(gallery, cropped=gallery_cropped)
+    detector = tmp_path / "chelonid_det.pt"
+    if detector_present:
+        detector.write_bytes(b"")
+    return ChelonidIdentifier(
+        SpeciesDB.load(),
+        classifier_path=tmp_path / "none.pt",
+        detector_path=detector,
+        calibration_path=tmp_path / "none.json",
+        gallery_path=gallery,
+        published_gallery_path=tmp_path / "none.npz",
+    )
+
+
+def test_crops_searched_with_whole_frames_are_refused(tmp_path):
+    from core.inference import detector_mismatch
+
+    identifier = _identifier_with(tmp_path, gallery_cropped=True, detector_present=False)
+    assert "no detector is installed" in detector_mismatch(identifier)
+
+
+def test_whole_frames_searched_with_crops_are_refused(tmp_path):
+    from core.inference import detector_mismatch
+
+    identifier = _identifier_with(tmp_path, gallery_cropped=False, detector_present=True)
+    assert "built from whole frames" in detector_mismatch(identifier)
+
+
+def test_matching_treatment_passes(tmp_path):
+    from core.inference import detector_mismatch
+
+    for cropped in (True, False):
+        identifier = _identifier_with(tmp_path / f"m{cropped}", gallery_cropped=cropped,
+                                      detector_present=cropped)
+        assert detector_mismatch(identifier) is None
+
+
+def test_cropping_survives_saving_and_publishing(tmp_path):
+    from core.matcher import Gallery
+
+    path = tmp_path / "gallery.npz"
+    _cropped_gallery(path, cropped=True)
+    loaded = Gallery.load(path)
+    assert loaded.cropped is True
+
+    published = tmp_path / "published.npz"
+    loaded.published().save(published)
+    assert Gallery.load(published).cropped is True
